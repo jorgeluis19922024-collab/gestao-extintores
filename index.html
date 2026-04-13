@@ -1,0 +1,4538 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Gestão de Extintores – NR-23 | Laticínios Centro Oeste</title>
+    <!-- Firebase SDK (Realtime Database) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+      /* ═══════════════════════════════════════════════
+   VARIÁVEIS E RESET
+═══════════════════════════════════════════════ */
+      :root {
+        --navy: #1a3a5c;
+        --navy2: #1e4976;
+        --red: #c0392b;
+        --red2: #e74c3c;
+        --green: #1a7a42;
+        --green2: #27ae60;
+        --yellow: #b7770d;
+        --yellow2: #e67e22;
+        --bg: #eef1f6;
+        --card: #ffffff;
+        --border: #cdd5e0;
+        --text: #1c2b3a;
+        --muted: #607080;
+        --radius: 8px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        min-height: 100vh;
+      }
+
+      /* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+      #appHeader {
+        background: linear-gradient(135deg, var(--navy) 55%, var(--navy2));
+        color: #fff;
+        padding: 0 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 4px solid #e8a020;
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        min-height: 64px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .header-icon {
+        font-size: 32px;
+        line-height: 1;
+      }
+      .header-titles h1 {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .header-titles h2 {
+        font-size: 11px;
+        font-weight: 400;
+        opacity: 0.8;
+        margin-top: 2px;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #userInfo {
+        font-size: 12px;
+        opacity: 0.9;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 4px 10px;
+        border-radius: 20px;
+      }
+      .btn-sm {
+        padding: 5px 14px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: 0.2s;
+      }
+      .btn-logout {
+        background: #e74c3c;
+        color: #fff;
+      }
+      .btn-logout:hover {
+        background: #c0392b;
+      }
+
+      /* ═══════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════ */
+      #loginScreen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a3a5c, #1e4976);
+      }
+      .login-box {
+        background: #fff;
+        border-radius: 14px;
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      }
+      .login-logo {
+        text-align: center;
+        font-size: 52px;
+        margin-bottom: 8px;
+      }
+      .login-box h2 {
+        text-align: center;
+        font-size: 18px;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+      .login-box p {
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 24px;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 13px;
+        color: var(--text);
+        transition: border 0.2s;
+        outline: none;
+        background: #fff;
+      }
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        border-color: var(--navy);
+      }
+      .btn-primary {
+        width: 100%;
+        padding: 11px;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-primary:hover {
+        background: var(--navy2);
+      }
+      .login-error {
+        color: var(--red2);
+        font-size: 12px;
+        text-align: center;
+        margin-top: 10px;
+        display: none;
+      }
+
+      /* ═══════════════════════════════════════════════
+   LAYOUT PRINCIPAL
+═══════════════════════════════════════════════ */
+      #appMain {
+        display: none;
+      }
+      .app-layout {
+        display: flex;
+        min-height: calc(100vh - 68px);
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: 220px;
+        background: var(--navy);
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+      .sidebar nav {
+        flex: 1;
+        padding: 16px 0;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 20px;
+        color: rgba(255, 255, 255, 0.75);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        transition: 0.15s;
+        user-select: none;
+      }
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+      }
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.13);
+        color: #fff;
+        border-left-color: #e8a020;
+      }
+      .nav-icon {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+      }
+      .nav-section {
+        font-size: 10px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        padding: 10px 20px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      /* CONTENT */
+      .content {
+        flex: 1;
+        padding: 24px;
+        overflow-x: auto;
+      }
+
+      /* ═══════════════════════════════════════════════
+   ALERTAS TOPO (TOAST / FILA)
+═══════════════════════════════════════════════ */
+
+      /* Container fixo — NÃO empurra o conteúdo */
+      #alertToast {
+        position: fixed;
+        top: 64px;          /* abaixo do header */
+        left: 220px;        /* depois da sidebar */
+        right: 0;
+        z-index: 850;
+        padding: 6px 24px 0;
+        pointer-events: none;
+        display: none;
+      }
+      @media (max-width: 900px) {
+        #alertToast { left: 0; top: 56px; padding: 6px 16px 0; }
+      }
+
+      /* Animações de entrada e saída */
+      @keyframes _alertIn {
+        from { transform: translateY(-110%); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+      }
+      @keyframes _alertOut {
+        from { transform: translateY(0);    opacity: 1; }
+        to   { transform: translateY(-110%); opacity: 0; }
+      }
+      .alert-toast-item {
+        pointer-events: auto;
+        border-radius: var(--radius);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      }
+      .alert-toast-item.entering {
+        animation: _alertIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      .alert-toast-item.leaving {
+        animation: _alertOut 0.32s ease-in forwards;
+      }
+
+      .alert-item {
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .alert-red {
+        background: #fdecea;
+        border-left: 4px solid var(--red2);
+        color: #7b1a1a;
+      }
+      .alert-yellow {
+        background: #fff8e1;
+        border-left: 4px solid #f9a825;
+        color: #5d3e00;
+      }
+      .alert-green {
+        background: #e8f5e9;
+        border-left: 4px solid var(--green2);
+        color: #1a4a26;
+      }
+
+      /* ═══════════════════════════════════════════════
+   PAINEL / CARDS
+═══════════════════════════════════════════════ */
+      .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 20px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        margin-bottom: 20px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .kpi {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        text-align: center;
+        border-top: 4px solid var(--navy);
+      }
+      .kpi.kpi-green {
+        border-top-color: var(--green2);
+      }
+      .kpi.kpi-yellow {
+        border-top-color: #f9a825;
+      }
+      .kpi.kpi-red {
+        border-top-color: var(--red2);
+      }
+      .kpi-value {
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--navy);
+      }
+      .kpi.kpi-green .kpi-value {
+        color: var(--green);
+      }
+      .kpi.kpi-yellow .kpi-value {
+        color: var(--yellow);
+      }
+      .kpi.kpi-red .kpi-value {
+        color: var(--red);
+      }
+      .kpi-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      /* ═══════════════════════════════════════════════
+   TABELAS
+═══════════════════════════════════════════════ */
+      .tbl-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead th {
+        background: var(--navy);
+        color: #fff;
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      tbody tr:nth-child(even) {
+        background: #f6f8fb;
+      }
+      tbody tr:hover {
+        background: #edf2ff;
+      }
+      tbody td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #e4eaf2;
+        vertical-align: middle;
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .badge-green {
+        background: #d4edda;
+        color: #155724;
+      }
+      .badge-yellow {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .badge-red {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .badge-gray {
+        background: #e2e3e5;
+        color: #383d41;
+      }
+
+      /* ═══════════════════════════════════════════════
+   FILTROS
+═══════════════════════════════════════════════ */
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+        align-items: flex-end;
+      }
+      .filters .form-group {
+        margin: 0;
+        min-width: 140px;
+      }
+      .filters .form-group label {
+        font-size: 11px;
+      }
+      .btn-filter {
+        padding: 8px 18px;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        align-self: flex-end;
+      }
+      .btn-filter:hover {
+        background: var(--navy2);
+      }
+
+      /* ═══════════════════════════════════════════════
+   BOTÕES AÇÃO
+═══════════════════════════════════════════════ */
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .btn {
+        padding: 8px 18px;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-navy {
+        background: var(--navy);
+        color: #fff;
+      }
+      .btn-navy:hover {
+        background: var(--navy2);
+      }
+      .btn-green {
+        background: var(--green);
+        color: #fff;
+      }
+      .btn-green:hover {
+        background: var(--green2);
+      }
+      .btn-yellow {
+        background: var(--yellow2);
+        color: #fff;
+      }
+      .btn-yellow:hover {
+        background: #ca6f1e;
+      }
+      .btn-red {
+        background: var(--red);
+        color: #fff;
+      }
+      .btn-red:hover {
+        background: var(--red2);
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1.5px solid var(--navy);
+        color: var(--navy);
+      }
+      .btn-outline:hover {
+        background: var(--navy);
+        color: #fff;
+      }
+      .btn-xs {
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 5px;
+      }
+
+      /* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        display: none;
+        padding: 16px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+      }
+      .modal-header {
+        background: var(--navy);
+        color: #fff;
+        padding: 16px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 12px 12px 0 0;
+      }
+      .modal-header h3 {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        line-height: 1;
+        opacity: 0.8;
+      }
+      .modal-close:hover {
+        opacity: 1;
+      }
+      .modal-body {
+        padding: 22px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+      }
+      .form-row-full {
+        grid-column: 1/-1;
+      }
+
+      /* ═══════════════════════════════════════════════
+   CHECKLIST
+═══════════════════════════════════════════════ */
+      .checklist-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 8px;
+        background: #fafbfd;
+      }
+      .checklist-label {
+        font-size: 13px;
+        font-weight: 500;
+        flex: 1;
+        padding-right: 12px;
+      }
+      .checklist-options {
+        display: flex;
+        gap: 8px;
+      }
+      .cl-opt {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1.5px solid var(--border);
+        cursor: pointer;
+        transition: 0.15s;
+        background: #fff;
+        color: var(--muted);
+      }
+      .cl-opt.sim {
+        background: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+      }
+      .cl-opt.nao {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+      }
+      .cl-opt.na {
+        background: #e2e3e5;
+        border-color: #6c757d;
+        color: #383d41;
+      }
+
+      /* ═══════════════════════════════════════════════
+   AVCB
+═══════════════════════════════════════════════ */
+      .avcb-status {
+        padding: 16px 20px;
+        border-radius: var(--radius);
+        font-size: 15px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 16px;
+      }
+
+      /* ═══════════════════════════════════════════════
+   IMPRESSÃO
+═══════════════════════════════════════════════ */
+      @media print {
+        .sidebar,
+        .header-right,
+        #alertToast,
+        .btn-group,
+        .filters,
+        #loginScreen,
+        .modal-overlay,
+        button,
+        .nav-item {
+          display: none !important;
+        }
+        #appHeader {
+          position: relative;
+          box-shadow: none;
+        }
+        body,
+        html {
+          background: #fff;
+        }
+        .content {
+          padding: 0;
+        }
+        .card {
+          box-shadow: none;
+          border: 1px solid #ccc;
+        }
+      }
+
+      /* ═══════════════════════════════════════════════
+   RESPONSIVO
+═══════════════════════════════════════════════ */
+      @media (max-width: 900px) {
+        .sidebar {
+          display: none;
+        }
+        .content {
+          padding: 14px;
+        }
+        .kpi-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ═══════════════════════════════════════════════
+   HISTÓRICO
+═══════════════════════════════════════════════ */
+      .hist-entry {
+        border-left: 3px solid var(--navy);
+        padding: 10px 14px;
+        margin-bottom: 10px;
+        background: #f6f8fb;
+        border-radius: 0 var(--radius) var(--radius) 0;
+      }
+      .hist-entry h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+      }
+      .hist-entry p {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .conforme {
+        border-left-color: var(--green2);
+      }
+      .ressalvas {
+        border-left-color: #f9a825;
+      }
+      .nao-conforme {
+        border-left-color: var(--red2);
+      }
+
+      /* ═══════════════════════════════════════════════
+   TELA DE TROCA DE SENHA OBRIGATÓRIA
+═══════════════════════════════════════════════ */
+      #trocaSenhaScreen {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #7b1a1a 0%, #a93226 60%, #c0392b);
+      }
+      .troca-senha-box {
+        background: #fff;
+        border-radius: 14px;
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 8px 36px rgba(0, 0, 0, 0.3);
+      }
+      .troca-senha-box h2 {
+        text-align: center;
+        font-size: 17px;
+        color: var(--navy);
+        margin-bottom: 4px;
+      }
+      .troca-senha-box .ts-sub {
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 24px;
+        line-height: 1.6;
+      }
+      /* Indicadores de requisito de senha */
+      .senha-req-list {
+        margin-top: 7px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .senha-req-item {
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--muted);
+        transition: color 0.2s;
+      }
+      .senha-req-item.ok   { color: var(--green); }
+      .senha-req-item.fail { color: var(--red2);  }
+      .senha-req-item::before { content: "○"; font-size: 10px; }
+      .senha-req-item.ok::before   { content: "✔"; }
+      .senha-req-item.fail::before { content: "✖"; }
+      /* Badge senha temporária */
+      .badge-orange  { background: #fdebd0; color: #7e5109; }
+      .badge-baixado { background: #d5d8dc; color: #2c3e50; font-style: italic; }
+      /* Linha de extintor baixado na tabela */
+      tr.row-baixado td { color: #95a5a6; background: #f8f9fa; }
+
+      /* ═══════════════════════════════════════════════
+   TELA DE CARREGAMENTO (FIREBASE)
+═══════════════════════════════════════════════ */
+      #loadingScreen {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #1a3a5c, #1e4976);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        gap: 20px;
+      }
+      .loading-icon { font-size: 56px; animation: loadPulse 1.2s ease-in-out infinite; }
+      @keyframes loadPulse {
+        0%, 100% { transform: scale(1);   opacity: 1; }
+        50%       { transform: scale(1.15); opacity: 0.7; }
+      }
+      .loading-text { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+      .loading-sub  { color: rgba(255,255,255,0.6); font-size: 12px; }
+      .loading-spinner {
+        width: 36px; height: 36px;
+        border: 3px solid rgba(255,255,255,0.25);
+        border-top-color: #e8a020;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      /* Badge de status Firebase */
+      .fb-status {
+        position: fixed; bottom: 14px; right: 14px;
+        font-size: 11px; padding: 4px 10px;
+        border-radius: 20px; font-weight: 600;
+        z-index: 9000; pointer-events: none;
+      }
+      .fb-status.online  { background: #d4edda; color: #155724; }
+      .fb-status.offline { background: #fff3cd; color: #856404; }
+
+      /* ═══════════════════════════════════════════════
+   FOTO DO EXTINTOR
+═══════════════════════════════════════════════ */
+      .foto-preview-wrap {
+        margin-top: 8px;
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+        background: #fafbfd;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .foto-preview-wrap img {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: calc(var(--radius) - 2px);
+        object-fit: contain;
+        display: block;
+      }
+      .foto-sem-foto {
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        padding: 20px;
+        pointer-events: none;
+      }
+      .foto-input-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 8px 16px;
+        background: var(--navy);
+        color: #fff;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .foto-input-label:hover { background: var(--navy2); }
+      .foto-input-label input[type="file"] { display: none; }
+
+      /* ═══════════════════════════════════════════════
+   MENU MOBILE (HAMBURGER)
+═══════════════════════════════════════════════ */
+      .mob-menu-btn {
+        display: none;
+        background: rgba(255,255,255,0.12);
+        border: none;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 6px;
+        line-height: 1;
+      }
+      .mob-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1050;
+      }
+      .mob-overlay.open { display: block; }
+
+      @media (max-width: 900px) {
+        /* Sidebar deslizante no mobile/tablet */
+        .mob-menu-btn { display: block; }
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: -240px;
+          height: 100vh;
+          z-index: 1100;
+          transition: left 0.25s ease;
+          overflow-y: auto;
+          width: 220px;
+        }
+        .sidebar.open { left: 0; }
+        /* Botões maiores para toque */
+        .btn { padding: 11px 16px; font-size: 13px; }
+        .btn-xs { padding: 8px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-sm { padding: 8px 16px; }
+        /* Células de tabela com mais espaço */
+        tbody td { padding: 11px 8px; }
+        /* Checklist empilhado */
+        .checklist-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .checklist-options { align-self: flex-end; }
+        .cl-opt { padding: 7px 14px; font-size: 13px; }
+        /* Filtros empilhados */
+        .filters { flex-direction: column; }
+        .filters .form-group { min-width: 100%; }
+        /* Título de página menor */
+        .page-title { font-size: 17px; }
+        /* Header mais compacto */
+        #appHeader { padding: 0 16px; min-height: 56px; }
+      }
+
+      /* ═══════════════════════════════════════════════
+   INSTRUÇÕES DE USO
+═══════════════════════════════════════════════ */
+      .instrucoes-section { margin-bottom: 28px; }
+      .instrucoes-section h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--navy);
+        border-left: 4px solid #e8a020;
+        padding-left: 10px;
+        margin-bottom: 12px;
+      }
+      .instrucoes-section p,
+      .instrucoes-section li {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.8;
+      }
+      .instrucoes-section ul,
+      .instrucoes-section ol {
+        padding-left: 22px;
+        margin: 8px 0;
+      }
+      .instrucoes-section li { margin-bottom: 4px; }
+      .instrucoes-info {
+        background: #e8f0fe;
+        border-left: 3px solid var(--navy);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .instrucoes-warn {
+        background: #fff8e1;
+        border-left: 3px solid #f9a825;
+        border-radius: 0 var(--radius) var(--radius) 0;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .perfil-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 10px;
+      }
+      .perfil-card h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 6px;
+      }
+      .fluxo-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        background: #f6f8fb;
+        border-radius: var(--radius);
+      }
+      .fluxo-num {
+        background: var(--navy);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .fluxo-text strong {
+        font-size: 13px;
+        color: var(--navy);
+        display: block;
+        margin-bottom: 2px;
+      }
+      .fluxo-text span { font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <!-- Tela de carregamento Firebase -->
+    <div id="loadingScreen">
+      <div class="loading-icon">🧯</div>
+      <div class="loading-text">Laticínios Centro Oeste</div>
+      <div class="loading-spinner"></div>
+      <div class="loading-sub" id="loadingMsg">Conectando ao banco de dados…</div>
+    </div>
+    <!-- Badge status Firebase (canto inferior direito) -->
+    <div class="fb-status" id="fbStatus" style="display:none;"></div>
+
+    <!-- ═══════════════════════════════════════════════
+     TELA DE LOGIN
+═══════════════════════════════════════════════ -->
+    <div id="loginScreen">
+      <div class="login-box">
+        <div class="login-logo">🧯</div>
+        <h2>Laticínios Centro Oeste</h2>
+        <p>Sistema de Gestão de Extintores – NR-23</p>
+        <div class="form-group">
+          <label>Usuário</label>
+          <input
+            type="text"
+            id="loginUser"
+            placeholder="Digite seu usuário"
+            autocomplete="username"
+          />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input
+            type="password"
+            id="loginPass"
+            placeholder="Digite sua senha"
+            autocomplete="current-password"
+          />
+        </div>
+        <button class="btn-primary" onclick="doLogin()">Entrar</button>
+        <div class="login-error" id="loginError">
+          Usuário ou senha inválidos.
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+     TELA DE TROCA DE SENHA OBRIGATÓRIA
+═══════════════════════════════════════════════ -->
+    <div id="trocaSenhaScreen">
+      <div class="troca-senha-box">
+        <div style="text-align:center;font-size:48px;margin-bottom:10px;">🔐</div>
+        <h2>Alteração de Senha Obrigatória</h2>
+        <p class="ts-sub" id="trocaSenhaInfo">
+          Você está usando uma <strong>senha temporária</strong>.<br />
+          Cadastre uma nova senha para acessar o sistema.
+        </p>
+        <div class="form-group">
+          <label>Nova Senha *</label>
+          <input
+            type="password"
+            id="novaSenha"
+            placeholder="Mínimo 8 caracteres"
+            autocomplete="new-password"
+            oninput="verificarForcaSenha()"
+          />
+          <div class="senha-req-list" id="senhaReqs">
+            <span class="senha-req-item" id="req-len">Mínimo 8 caracteres</span>
+            <span class="senha-req-item" id="req-letra">Pelo menos 1 letra</span>
+            <span class="senha-req-item" id="req-num">Pelo menos 1 número</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirmar Nova Senha *</label>
+          <input
+            type="password"
+            id="confirmarSenha"
+            placeholder="Repita a nova senha"
+            autocomplete="new-password"
+            oninput="verificarConfirmacao()"
+          />
+          <div class="senha-req-list" id="senhaConfReq"></div>
+        </div>
+        <button
+          class="btn-primary"
+          onclick="confirmarTrocaSenha()"
+          style="margin-top:10px;"
+        >
+          🔒 Salvar Nova Senha
+        </button>
+        <div class="login-error" id="trocaSenhaError"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+     APP PRINCIPAL
+═══════════════════════════════════════════════ -->
+    <div id="appMain">
+      <!-- HEADER -->
+      <header id="appHeader">
+        <div class="header-left">
+          <div class="header-icon">🧯</div>
+          <div class="header-titles">
+            <h1>Laticínios Centro Oeste Indústria</h1>
+            <h2>Sistema de Gestão de Extintores – NR-23</h2>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="mob-menu-btn" onclick="toggleMobNav()" aria-label="Menu">☰</button>
+          <span id="userInfo"></span>
+          <button class="btn-sm btn-logout" onclick="doLogout()">Sair</button>
+        </div>
+      </header>
+
+      <!-- TOAST DE ALERTAS (fixo, não empurra conteúdo) -->
+      <div id="alertToast"></div>
+
+      <!-- LAYOUT -->
+      <div class="app-layout">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+          <nav>
+            <div class="nav-section">Principal</div>
+            <div
+              class="nav-item active"
+              onclick="showPage('dashboard')"
+              id="nav-dashboard"
+            >
+              <span class="nav-icon">📊</span> Painel Geral
+            </div>
+            <div class="nav-section">Extintores</div>
+            <div
+              class="nav-item"
+              onclick="showPage('extintores')"
+              id="nav-extintores"
+            >
+              <span class="nav-icon">🧯</span> Extintores
+            </div>
+            <div
+              class="nav-item"
+              onclick="showPage('checklist')"
+              id="nav-checklist"
+            >
+              <span class="nav-icon">✅</span> Checklist NR-23
+            </div>
+            <div
+              class="nav-item"
+              onclick="showPage('historico')"
+              id="nav-historico"
+            >
+              <span class="nav-icon">📋</span> Histórico
+            </div>
+            <div class="nav-section">Conformidade</div>
+            <div class="nav-item" onclick="showPage('avcb')" id="nav-avcb">
+              <span class="nav-icon">📄</span> AVCB
+            </div>
+            <div class="nav-section">Relatórios</div>
+            <div
+              class="nav-item"
+              onclick="showPage('relatorios')"
+              id="nav-relatorios"
+            >
+              <span class="nav-icon">📁</span> Relatórios Gerais
+            </div>
+            <div
+              class="nav-item"
+              onclick="showPage('baixados')"
+              id="nav-baixados"
+            >
+              <span class="nav-icon">📦</span> Extintores Baixados
+            </div>
+            <div class="nav-section">Administração</div>
+            <div
+              class="nav-item"
+              onclick="showPage('usuarios')"
+              id="nav-usuarios"
+            >
+              <span class="nav-icon">👥</span> Usuários
+            </div>
+            <div
+              class="nav-item"
+              onclick="showPage('logs')"
+              id="nav-logs"
+            >
+              <span class="nav-icon">🛡️</span> Logs de Segurança
+            </div>
+            <div
+              class="nav-item"
+              onclick="showPage('instrucoes')"
+              id="nav-instrucoes"
+            >
+              <span class="nav-icon">📖</span> Instruções de Uso
+            </div>
+          </nav>
+        </div>
+
+        <!-- overlay mobile para fechar menu -->
+        <div class="mob-overlay" id="mobOverlay" onclick="closeMobNav()"></div>
+
+        <!-- CONTENT -->
+        <div class="content" id="pageContent">
+          <!-- páginas renderizadas aqui -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+     MODAIS
+═══════════════════════════════════════════════ -->
+    <!-- Modal Extintor -->
+    <div class="modal-overlay" id="modalExtintor">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalExtintorTitle">Cadastrar Extintor</h3>
+          <button class="modal-close" onclick="closeModal('modalExtintor')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nº Patrimônio *</label>
+              <input type="text" id="fPatrimonio" placeholder="EXT-001" />
+            </div>
+            <div class="form-group">
+              <label>Tipo *</label>
+              <select id="fTipo">
+                <option value="">Selecione</option>
+                <option>Água</option>
+                <option>PQS</option>
+                <option>CO2</option>
+                <option>Espuma</option>
+                <option>Classe K</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Classe de Fogo *</label>
+              <select id="fClasse">
+                <option value="">Selecione</option>
+                <option>A</option>
+                <option>B</option>
+                <option>C</option>
+                <option>D</option>
+                <option>K</option>
+                <option>A/B</option>
+                <option>B/C</option>
+                <option>A/B/C</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Capacidade *</label>
+              <input type="text" id="fCapacidade" placeholder="6 kg / 4 L" />
+            </div>
+            <div class="form-group">
+              <label>Setor / Localização *</label>
+              <input
+                type="text"
+                id="fLocalizacao"
+                placeholder="Ex: Sala de Máquinas A"
+              />
+            </div>
+            <div class="form-group">
+              <label>Data de Fabricação</label>
+              <input type="date" id="fFabricacao" />
+            </div>
+            <div class="form-group">
+              <label>Última Inspeção *</label>
+              <input type="date" id="fUltimaInspecao" />
+            </div>
+            <div class="form-group">
+              <label>Próximo Teste Hidrostático *</label>
+              <input type="date" id="fHidrostatico" />
+            </div>
+            <div class="form-group">
+              <label>Vencimento da Recarga *</label>
+              <input type="date" id="fRecarga" />
+            </div>
+            <div class="form-group">
+              <label>Empresa de Manutenção</label>
+              <input
+                type="text"
+                id="fEmpresaMnt"
+                placeholder="Nome da empresa"
+              />
+            </div>
+            <div class="form-group">
+              <label>Nº Selo / Lacre</label>
+              <input type="text" id="fSelo" placeholder="SL-000" />
+            </div>
+            <div class="form-group form-row-full">
+              <label>Observações Técnicas</label>
+              <textarea
+                id="fObs"
+                rows="2"
+                placeholder="Informações adicionais..."
+              ></textarea>
+            </div>
+            <div class="form-group form-row-full" id="fFotoGroup">
+              <label>Foto do Extintor</label>
+              <div id="fotoPreviewBox" class="foto-preview-wrap">
+                <div class="foto-sem-foto">📷 Sem foto cadastrada</div>
+              </div>
+              <label class="foto-input-label" id="fFotoLabel">
+                📷 Selecionar / Tirar Foto
+                <input type="file" id="fFoto" accept="image/*" onchange="handleFotoInput(this)" />
+              </label>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                JPG ou PNG · máx. 800×600 px (redimensionado automaticamente) · Em dispositivos móveis abre câmera ou galeria.
+              </div>
+            </div>
+          </div>
+          <div
+            style="
+              margin-top: 16px;
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+            "
+          >
+            <button
+              class="btn btn-outline"
+              onclick="closeModal('modalExtintor')"
+            >
+              Cancelar
+            </button>
+            <button class="btn btn-navy" onclick="salvarExtintor()">
+              💾 Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Checklist -->
+    <div class="modal-overlay" id="modalChecklist">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalChecklistTitle">Checklist de Inspeção – NR-23</h3>
+          <button class="modal-close" onclick="closeModal('modalChecklist')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="modalChecklistBody"></div>
+      </div>
+    </div>
+
+    <!-- Modal Usuário -->
+    <div class="modal-overlay" id="modalUsuario">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalUsuarioTitle">Cadastrar Usuário</h3>
+          <button class="modal-close" onclick="closeModal('modalUsuario')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome Completo *</label>
+              <input type="text" id="fNomeUser" placeholder="Nome do usuário" />
+            </div>
+            <div class="form-group">
+              <label>Usuário (login) *</label>
+              <input type="text" id="fLoginUser" placeholder="usuario" />
+            </div>
+            <div class="form-group">
+              <label id="fSenhaUserLabel">Senha Temporária *</label>
+              <input
+                type="password"
+                id="fSenhaUser"
+                placeholder="Será exigida troca no 1º acesso"
+                autocomplete="new-password"
+              />
+              <div id="fSenhaUserHint" style="font-size:11px;color:var(--yellow);margin-top:5px;line-height:1.5;">
+                ⚠️ O usuário deverá cadastrar uma nova senha no primeiro login.
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Perfil *</label>
+              <select id="fPerfilUser">
+                <option value="Administrador">Administrador</option>
+                <option value="Operador">Operador</option>
+              </select>
+            </div>
+          </div>
+          <div
+            style="
+              margin-top: 16px;
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+            "
+          >
+            <button
+              class="btn btn-outline"
+              onclick="closeModal('modalUsuario')"
+            >
+              Cancelar
+            </button>
+            <button class="btn btn-navy" onclick="salvarUsuario()">
+              💾 Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal AVCB -->
+    <div class="modal-overlay" id="modalAVCB">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Dados do AVCB</h3>
+          <button class="modal-close" onclick="closeModal('modalAVCB')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Número do AVCB *</label>
+              <input type="text" id="fAvcbNum" placeholder="AVCB-0000/2024" />
+            </div>
+            <div class="form-group">
+              <label>Data de Emissão *</label>
+              <input type="date" id="fAvcbEmissao" />
+            </div>
+            <div class="form-group">
+              <label>Data de Validade *</label>
+              <input type="date" id="fAvcbValidade" />
+            </div>
+            <div class="form-group">
+              <label>Orgão Emissor</label>
+              <input
+                type="text"
+                id="fAvcbOrgao"
+                placeholder="Corpo de Bombeiros – MG"
+              />
+            </div>
+            <div class="form-group form-row-full">
+              <label>Observações</label>
+              <textarea
+                id="fAvcbObs"
+                rows="2"
+                placeholder="Informações adicionais..."
+              ></textarea>
+            </div>
+          </div>
+          <div
+            style="
+              margin-top: 16px;
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+            "
+          >
+            <button class="btn btn-outline" onclick="closeModal('modalAVCB')">
+              Cancelar
+            </button>
+            <button class="btn btn-navy" onclick="salvarAVCB()">
+              💾 Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL BAIXA DE EXTINTOR
+    ═══════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalBaixa">
+      <div class="modal">
+        <div class="modal-header" style="background:#a93226;">
+          <h3>⬇️ Baixar Extintor</h3>
+          <button class="modal-close" onclick="closeModal('modalBaixa')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="modalBaixaInfo" style="background:#fdf2f2;border:1px solid #f5b7b1;border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:13px;"></div>
+          <div class="form-group">
+            <label>Motivo da Baixa *</label>
+            <select id="fMotivoBaixa" onchange="toggleMotivoBaixaOutro()">
+              <option value="">— Selecione o motivo —</option>
+              <option>Vencimento definitivo</option>
+              <option>Extintor danificado</option>
+              <option>Substituição por novo</option>
+              <option>Mudança de layout / área</option>
+              <option>Furto / extravio</option>
+              <option>Condenação técnica</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group" id="fDescBaixaGroup" style="display:none;">
+            <label>Descrição detalhada *</label>
+            <textarea id="fDescBaixa" rows="3" placeholder="Descreva o motivo da baixa..."></textarea>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('modalBaixa')">Cancelar</button>
+            <button class="btn btn-red" onclick="confirmarBaixa()">⬇️ Confirmar Baixa</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         MODAL REATIVAÇÃO DE EXTINTOR
+    ═══════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalReativar">
+      <div class="modal">
+        <div class="modal-header" style="background:#1a7a42;">
+          <h3>♻️ Reativar Extintor</h3>
+          <button class="modal-close" onclick="closeModal('modalReativar')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="modalReativarInfo" style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:13px;"></div>
+          <div class="form-group">
+            <label>Justificativa da Reativação *</label>
+            <textarea id="fJustReativar" rows="3" placeholder="Informe a justificativa técnica para reativação..."></textarea>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-outline" onclick="closeModal('modalReativar')">Cancelar</button>
+            <button class="btn btn-green" onclick="confirmarReativacao()">♻️ Confirmar Reativação</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input oculto para seleção de arquivo CSV (qualquer usuário autenticado) -->
+<input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCSVFile(event)"/>
+
+<!-- Modal resultado importação -->
+<div class="modal-overlay" id="modalImportResult">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="importResultTitle">Resultado da Importação</h3>
+      <button class="modal-close" onclick="closeModal('modalImportResult')">✕</button>
+    </div>
+    <div class="modal-body" id="importResultBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL FICHA DO EXTINTOR
+═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalFichaExtintor">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <h3>📋 Ficha do Extintor – Auditoria de Ciclo de Vida</h3>
+      <button class="modal-close" onclick="closeModal('modalFichaExtintor')">✕</button>
+    </div>
+    <div class="modal-body" id="fichaExtintorBody" style="max-height:72vh;overflow-y:auto;"></div>
+    <div style="padding:12px 20px 16px;display:flex;justify-content:flex-end;border-top:1px solid var(--border);">
+      <button class="btn btn-outline" onclick="closeModal('modalFichaExtintor')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+    <script>
+      "use strict";
+      /* ──────────────────────────────────────────────
+   ESTADO GLOBAL
+────────────────────────────────────────────── */
+      /* ╔══════════════════════════════════════════════════════════════╗
+         ║  CONFIGURAÇÃO FIREBASE — preencha com os dados do seu projeto ║
+         ║  Console: https://console.firebase.google.com                 ║
+         ╚══════════════════════════════════════════════════════════════╝
+         Passos:
+         1) Crie um projeto no Firebase Console
+         2) Ative o "Realtime Database" (modo de teste por 30 dias ou
+            configure as regras de segurança manualmente)
+         3) Cole aqui as credenciais do seu Web App
+         4) Em Authentication → Authorized domains, adicione:
+            • seu-usuario.github.io
+         5) Renomeie o arquivo para index.html e suba no repositório GitHub
+         6) Ative GitHub Pages: Settings → Pages → Branch: main → / (root)  */
+      const FIREBASE_CONFIG = {
+        apiKey:            "AIzaSyCRGy-qkciBbHcsacsE33vHMFnbi0QrXTA",
+        authDomain:        "gestao-extintores.firebaseapp.com",
+        databaseURL:       "https://gestao-extintores-default-rtdb.firebaseio.com",
+        projectId:         "gestao-extintores",
+        storageBucket:     "gestao-extintores.firebasestorage.app",
+        messagingSenderId: "251035688052",
+        appId:             "1:251035688052:web:7a5c6f1d683edadeff8521",
+      };
+      // Ativa Firebase apenas quando as credenciais forem preenchidas
+      const FIREBASE_ON = FIREBASE_CONFIG.apiKey !== "COLE_AQUI_SUA_API_KEY";
+
+      // Instância do Realtime Database (atribuída na inicialização)
+      let _fbDb = null;
+
+      // Cache em memória — permite leituras síncronas em todo o sistema
+      const _cache = {};
+
+      // Chaves que ficam apenas no dispositivo (sessão e navegação)
+      const LOCAL_ONLY = ["sessao", "paginaAtual"];
+
+      let currentUser       = null;
+      let pendingLoginUser  = null;  // usuário aguardando troca obrigatória de senha
+      let pendingLoginMotivo= null;  // 'temporaria' | 'expirada'
+      let editingId         = null;  // id do extintor em edição
+      let editingUserId     = null;
+      let checklistExtId    = null;
+      let baixandoExtId     = null;  // id do extintor em processo de baixa
+      let reativandoExtId   = null;  // id do extintor em processo de reativação
+      let _pendingFoto      = null;  // base64 da foto pendente no modal extintor
+      // Fila de alertas (carrossel)
+      let _alertQueue = [];
+      let _alertIdx   = 0;
+      let _alertTimer = null;
+
+      // Motivos padronizados de baixa
+      const MOTIVOS_BAIXA = [
+        "Vencimento definitivo",
+        "Extintor danificado",
+        "Substituição por novo",
+        "Mudança de layout / área",
+        "Furto / extravio",
+        "Condenação técnica",
+        "Outro",
+      ];
+
+      // Política de expiração de senha (dias)
+      const SENHA_EXPIRA_DIAS = 90;
+
+      /* ──────────────────────────────────────────────
+   STORAGE HELPERS  (cache ↔ Firebase ↔ localStorage)
+────────────────────────────────────────────── */
+
+      /** Lê do cache em memória (ou localStorage para chaves de dispositivo) */
+      function ls(key) {
+        if (LOCAL_ONLY.includes(key)) {
+          try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+        }
+        return _cache.hasOwnProperty(key) ? _cache[key] : null;
+      }
+
+      /**
+       * Grava no cache + Firebase (assíncrono) + localStorage como backup offline.
+       * Para chaves de dispositivo, grava apenas no localStorage.
+       */
+      function lsSet(key, val) {
+        if (LOCAL_ONLY.includes(key)) {
+          localStorage.setItem(key, JSON.stringify(val));
+          return;
+        }
+        // 1) Atualiza cache imediatamente (UI sempre responsiva)
+        _cache[key] = val;
+        // 2) Backup local (funciona offline)
+        try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) { /* storage cheio */ }
+        // 3) Persiste no Firebase (assíncrono, não bloqueia)
+        if (FIREBASE_ON && _fbDb) {
+          _fbDb.ref("dados/" + key)
+            .set(val === undefined ? null : val)
+            .catch((e) => console.warn("[Firebase] Erro ao salvar '" + key + "':", e.message));
+        }
+      }
+
+      /* ──────────────────────────────────────────────
+   INICIALIZAÇÃO DE DADOS
+────────────────────────────────────────────── */
+      function initData() {
+        // Usuários padrão
+        if (!ls("usuarios")) {
+          lsSet("usuarios", [
+            {
+              id: "u1",
+              nome: "Administrador",
+              login: "admin",
+              senha: "admin123",
+              perfil: "Administrador",
+              senha_temporaria: false,
+              data_criacao: today(),
+              criado_por: "Sistema",
+              data_ultima_troca_senha: today(), // inicia o contador de 90 dias
+            },
+            {
+              id: "u2",
+              nome: "Operador",
+              login: "operador",
+              senha: "operador123",
+              perfil: "Operador",
+              senha_temporaria: false,
+              data_criacao: today(),
+              criado_por: "Sistema",
+              data_ultima_troca_senha: today(),
+            },
+          ]);
+        }
+        // Extintores
+        if (!ls("extintores")) lsSet("extintores", []);
+        // Checklists
+        if (!ls("checklists")) lsSet("checklists", []);
+        // AVCB
+        if (!ls("avcb")) lsSet("avcb", null);
+        // Logs de segurança
+        if (!ls("logs_seguranca")) lsSet("logs_seguranca", []);
+      }
+
+      /* ──────────────────────────────────────────────
+   HELPERS DE PERMISSÃO
+────────────────────────────────────────────── */
+      /** Retorna true se o usuário logado é Administrador */
+      function isAdmin() {
+        return currentUser && currentUser.perfil === "Administrador";
+      }
+      /**
+       * Retorna true se o usuário pode cadastrar/editar/excluir extintores.
+       * Tanto Administrador quanto Operador têm essa permissão.
+       */
+      function canManageExtintores() {
+        return !!currentUser; // qualquer perfil autenticado
+      }
+
+      /* ──────────────────────────────────────────────
+   LOG DE SEGURANÇA
+────────────────────────────────────────────── */
+      /**
+       * Tipos aceitos: 'primeiro_login' | 'troca_obrigatoria' |
+       *                'reset_admin'    | 'expiracao'
+       * responsavelNome: preenchido quando o evento é feito por outro usuário (ex: reset pelo admin)
+       */
+      function _registrarLog(tipo, usuarioId, usuarioNome, responsavelNome) {
+        const logs = ls("logs_seguranca") || [];
+        logs.push({
+          id: "log" + Date.now(),
+          tipo,
+          usuarioId,
+          usuarioNome,
+          responsavel: responsavelNome || usuarioNome,
+          dataHora: new Date().toISOString(),
+        });
+        lsSet("logs_seguranca", logs);
+      }
+
+      /** Descrição legível dos tipos de log */
+      function _descLog(tipo) {
+        const map = {
+          // Senha
+          primeiro_login:    "🔐 Primeiro login (senha temporária)",
+          troca_obrigatoria: "🔄 Troca de senha (obrigatória)",
+          reset_admin:       "🔑 Reset de senha pelo Administrador",
+          expiracao:         "⏰ Troca de senha (senha expirada)",
+          // Extintores
+          baixa_extintor:      "⬇️ Baixa de Extintor",
+          reativacao_extintor: "♻️ Reativação de Extintor",
+          // Tentativas negadas
+          baixa_negada:        "⛔ Tentativa de Baixa — Negada",
+          reativacao_negada:   "⛔ Tentativa de Reativação — Negada",
+          baixa_sem_motivo:    "⚠️ Tentativa de Baixa sem Motivo",
+          checklist_negado:         "⛔ Tentativa de Inspeção em Extintor Baixado",
+          // Foto
+          foto_extintor_inclusao:    "📷 Foto do Extintor — Inclusão",
+          foto_extintor_substituicao:"📷 Foto do Extintor — Substituição",
+        };
+        return map[tipo] || tipo;
+      }
+
+      /* ──────────────────────────────────────────────
+   LOGIN / LOGOUT
+────────────────────────────────────────────── */
+
+      /** Verifica se a senha do usuário está expirada (> 90 dias) */
+      function _senhaExpirada(user) {
+        if (!user.data_ultima_troca_senha) return false; // sem data → não expira
+        const dias = Math.floor(
+          (new Date(today()) - new Date(user.data_ultima_troca_senha))
+          / (1000 * 60 * 60 * 24)
+        );
+        return dias > SENHA_EXPIRA_DIAS;
+      }
+
+      /** Ativa o app principal para um usuário já validado */
+      function _entrarNoSistema(user) {
+        currentUser = user;
+        lsSet("sessao", user.id);
+        document.getElementById("loginScreen").style.display    = "none";
+        document.getElementById("trocaSenhaScreen").style.display = "none";
+        document.getElementById("appMain").style.display        = "block";
+        document.getElementById("userInfo").textContent =
+          `Usuário logado: ${user.nome} | Perfil: ${user.perfil}`;
+        // Restaura a última página visitada (persiste após F5)
+        const pagSalva = ls("paginaAtual") || "dashboard";
+        showPage(pagSalva);
+      }
+
+      /**
+       * Redireciona para tela de troca de senha obrigatória.
+       * motivo: 'temporaria' | 'expirada'
+       */
+      function _exigirTrocaSenha(user, motivo) {
+        pendingLoginUser   = user;
+        pendingLoginMotivo = motivo || "temporaria";
+        // Sem sessão ativa até a senha ser trocada
+        lsSet("sessao", null);
+        document.getElementById("loginScreen").style.display    = "none";
+        document.getElementById("appMain").style.display        = "none";
+        // Limpa campos
+        document.getElementById("novaSenha").value = "";
+        document.getElementById("confirmarSenha").value = "";
+        document.getElementById("senhaReqs").querySelectorAll(".senha-req-item")
+          .forEach((el) => (el.className = "senha-req-item"));
+        document.getElementById("senhaConfReq").innerHTML = "";
+        document.getElementById("trocaSenhaError").style.display = "none";
+        // Mensagem contextual
+        const msg = pendingLoginMotivo === "expirada"
+          ? `⏰ <strong>Sua senha expirou</strong> (validade: ${SENHA_EXPIRA_DIAS} dias).<br/>
+             Crie uma nova senha para continuar, ${user.nome}.`
+          : `Olá, <strong>${user.nome}</strong>! Você está usando uma <strong>senha temporária</strong>.<br/>
+             Cadastre uma nova senha para acessar o sistema.`;
+        document.getElementById("trocaSenhaInfo").innerHTML = msg;
+        document.getElementById("trocaSenhaScreen").style.display = "flex";
+      }
+
+      function doLogin() {
+        const u   = document.getElementById("loginUser").value.trim();
+        const p   = document.getElementById("loginPass").value.trim();
+        const err = document.getElementById("loginError");
+        const usuarios = ls("usuarios") || [];
+        const user = usuarios.find((x) => x.login === u && x.senha === p);
+        if (!user) {
+          err.textContent    = "Usuário ou senha inválidos.";
+          err.style.display  = "block";
+          return;
+        }
+        err.style.display = "none";
+
+        // 1. Senha temporária → troca obrigatória
+        if (user.senha_temporaria === true) {
+          _registrarLog("primeiro_login", user.id, user.nome);
+          _exigirTrocaSenha(user, "temporaria");
+          return;
+        }
+        // 2. Senha expirada → troca obrigatória
+        if (_senhaExpirada(user)) {
+          _registrarLog("expiracao", user.id, user.nome);
+          _exigirTrocaSenha(user, "expirada");
+          return;
+        }
+        // 3. Tudo ok
+        _entrarNoSistema(user);
+      }
+
+      function doLogout() {
+        currentUser        = null;
+        pendingLoginUser   = null;
+        pendingLoginMotivo = null;
+        // Limpa sessão via lsSet para manter consistência com o cache
+        lsSet("sessao", null);
+        lsSet("paginaAtual", null);
+        document.getElementById("appMain").style.display         = "none";
+        document.getElementById("trocaSenhaScreen").style.display = "none";
+        document.getElementById("loginScreen").style.display     = "flex";
+        document.getElementById("loginUser").value = "";
+        document.getElementById("loginPass").value = "";
+        document.getElementById("loginError").style.display = "none";
+      }
+
+      /** Verifica sessão persistida ao recarregar a página */
+      function checkSession() {
+        const sid = ls("sessao");
+        if (sid) {
+          const u = (ls("usuarios") || []).find((x) => x.id === sid);
+          if (u) {
+            if (u.senha_temporaria === true) {
+              _registrarLog("primeiro_login", u.id, u.nome);
+              _exigirTrocaSenha(u, "temporaria");
+              return;
+            }
+            if (_senhaExpirada(u)) {
+              _registrarLog("expiracao", u.id, u.nome);
+              _exigirTrocaSenha(u, "expirada");
+              return;
+            }
+            _entrarNoSistema(u);
+            return;
+          }
+        }
+        document.getElementById("loginScreen").style.display = "flex";
+      }
+
+      document.getElementById("loginPass").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+      document.getElementById("confirmarSenha").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") confirmarTrocaSenha();
+      });
+
+      /* ──────────────────────────────────────────────
+   TROCA OBRIGATÓRIA DE SENHA
+────────────────────────────────────────────── */
+
+      // Atualiza os indicadores visuais de requisitos enquanto o usuário digita
+      function verificarForcaSenha() {
+        const v = document.getElementById("novaSenha").value;
+        _setReq("req-len",   v.length >= 8);
+        _setReq("req-letra", /[a-zA-Z]/.test(v));
+        _setReq("req-num",   /[0-9]/.test(v));
+        // Atualiza confirmação se já estiver preenchida
+        if (document.getElementById("confirmarSenha").value) verificarConfirmacao();
+      }
+
+      function _setReq(id, ok) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = "senha-req-item " + (ok ? "ok" : "fail");
+      }
+
+      function verificarConfirmacao() {
+        const nova    = document.getElementById("novaSenha").value;
+        const conf    = document.getElementById("confirmarSenha").value;
+        const el      = document.getElementById("senhaConfReq");
+        if (!el) return;
+        if (!conf) { el.innerHTML = ""; return; }
+        if (nova === conf) {
+          el.innerHTML = '<span class="senha-req-item ok">Senhas conferem</span>';
+        } else {
+          el.innerHTML = '<span class="senha-req-item fail">Senhas não conferem</span>';
+        }
+      }
+
+      // Valida a senha e retorna array de erros (vazio = válida)
+      function _validarSenha(senha) {
+        const erros = [];
+        if (senha.length < 8)         erros.push("Mínimo de 8 caracteres.");
+        if (!/[a-zA-Z]/.test(senha))  erros.push("Deve conter pelo menos 1 letra.");
+        if (!/[0-9]/.test(senha))     erros.push("Deve conter pelo menos 1 número.");
+        return erros;
+      }
+
+      function confirmarTrocaSenha() {
+        const nova  = document.getElementById("novaSenha").value;
+        const conf  = document.getElementById("confirmarSenha").value;
+        const errEl = document.getElementById("trocaSenhaError");
+
+        const erros = _validarSenha(nova);
+        if (erros.length) {
+          errEl.textContent = erros[0];
+          errEl.style.display = "block";
+          return;
+        }
+        if (nova !== conf) {
+          errEl.textContent = "As senhas não conferem. Verifique e tente novamente.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (!pendingLoginUser) {
+          errEl.textContent = "Erro de sessão. Faça login novamente.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        // Atualiza o usuário no localStorage
+        const usuarios = ls("usuarios") || [];
+        const idx = usuarios.findIndex((u) => u.id === pendingLoginUser.id);
+        if (idx < 0) {
+          errEl.textContent = "Usuário não encontrado. Contate o administrador.";
+          errEl.style.display = "block";
+          return;
+        }
+        usuarios[idx] = Object.assign({}, usuarios[idx], {
+          senha: nova,
+          senha_temporaria: false,
+          data_ultima_troca_senha: today(),
+        });
+        lsSet("usuarios", usuarios);
+
+        // Registra o tipo correto de evento no log
+        const tipoLog = pendingLoginMotivo === "expirada" ? "expiracao" : "troca_obrigatoria";
+        _registrarLog(tipoLog, usuarios[idx].id, usuarios[idx].nome);
+
+        const userAtualizado = usuarios[idx];
+        pendingLoginUser   = null;
+        pendingLoginMotivo = null;
+        _entrarNoSistema(userAtualizado);
+      }
+
+      // Administrador reseta a senha de um usuário (força nova troca no próximo login)
+      function resetarSenhaUsuario(id) {
+        const usuarios = ls("usuarios") || [];
+        const u = usuarios.find((x) => x.id === id);
+        if (!u) return;
+
+        const novaSenhaTemp = prompt(
+          `Definir nova senha temporária para "${u.nome}":\n(Mínimo 8 caracteres, 1 letra, 1 número)`
+        );
+        if (novaSenhaTemp === null) return; // Cancelou
+
+        const erros = _validarSenha(novaSenhaTemp.trim());
+        if (erros.length) {
+          alert("Senha inválida:\n" + erros.join("\n"));
+          return;
+        }
+
+        const idx = usuarios.findIndex((x) => x.id === id);
+        usuarios[idx] = Object.assign({}, usuarios[idx], {
+          senha: novaSenhaTemp.trim(),
+          senha_temporaria: true,
+          data_criacao: usuarios[idx].data_criacao || today(),
+          criado_por: usuarios[idx].criado_por || currentUser.nome,
+        });
+        lsSet("usuarios", usuarios);
+        // Registra o reset no log de segurança
+        _registrarLog("reset_admin", u.id, u.nome, currentUser.nome);
+        alert(`Senha de "${u.nome}" redefinida com sucesso.\nO usuário deverá criar uma nova senha no próximo login.`);
+        showPage("usuarios");
+      }
+
+      /* ──────────────────────────────────────────────
+   NAVEGAÇÃO
+────────────────────────────────────────────── */
+      function showPage(page) {
+        // Persiste a página atual para restaurar após F5
+        lsSet("paginaAtual", page);
+
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((n) => n.classList.remove("active"));
+        const nav = document.getElementById("nav-" + page);
+        if (nav) nav.classList.add("active");
+        const c = document.getElementById("pageContent");
+        // Renderiza
+        const pages = {
+          dashboard:   renderDashboard,
+          extintores:  renderExtintores,
+          checklist:   renderChecklistPage,
+          historico:   renderHistorico,
+          avcb:        renderAVCB,
+          relatorios:  renderRelatorios,
+          baixados:    renderBaixados,
+          usuarios:    renderUsuarios,
+          logs:        renderLogs,
+          instrucoes:  renderInstrucoes,
+        };
+        // Exibe/oculta itens do menu exclusivos do admin / supervisor
+        const navLogs       = document.getElementById("nav-logs");
+        const navUsuarios   = document.getElementById("nav-usuarios");
+        const navInstrucoes = document.getElementById("nav-instrucoes");
+        if (navLogs)       navLogs.style.display       = isAdmin() ? "" : "none";
+        if (navUsuarios)   navUsuarios.style.display   = isAdmin() ? "" : "none";
+        if (navInstrucoes) navInstrucoes.style.display = "";
+        // Fecha menu mobile ao navegar
+        closeMobNav();
+
+        if (pages[page]) c.innerHTML = pages[page]();
+        buildAlerts();
+      }
+
+      /* ──────────────────────────────────────────────
+   UTILITÁRIOS DE DATA
+────────────────────────────────────────────── */
+      function today() {
+        return new Date().toISOString().split("T")[0];
+      }
+      function fmtDate(d) {
+        if (!d) return "–";
+        const [y, m, dia] = d.split("-");
+        return `${dia}/${m}/${y}`;
+      }
+      function daysTo(dateStr) {
+        if (!dateStr) return Infinity;
+        return Math.floor(
+          (new Date(dateStr) - new Date(today())) / (1000 * 60 * 60 * 24),
+        );
+      }
+      function statusDate(dateStr, warnDays = 30) {
+        const d = daysTo(dateStr);
+        if (d < 0) return "red";
+        if (d <= warnDays) return "yellow";
+        return "green";
+      }
+
+      /* ──────────────────────────────────────────────
+   STATUS DO EXTINTOR
+────────────────────────────────────────────── */
+      function extStatus(ext) {
+        if (ext.status === "BAIXADO") return "baixado";
+        const r = statusDate(ext.recarga);
+        const h = statusDate(ext.hidrostatico);
+        if (r === "red" || h === "red") return "red";
+        if (r === "yellow" || h === "yellow") return "yellow";
+        return "green";
+      }
+      function extStatusBadge(ext) {
+        const s = extStatus(ext);
+        if (s === "baixado") return '<span class="badge badge-baixado">📦 Baixado</span>';
+        if (s === "red")     return '<span class="badge badge-red">❌ Irregular</span>';
+        if (s === "yellow")  return '<span class="badge badge-yellow">⚠️ Atenção</span>';
+        return '<span class="badge badge-green">✅ Regular</span>';
+      }
+
+      /* ──────────────────────────────────────────────
+   ALERTAS AUTOMÁTICOS
+────────────────────────────────────────────── */
+      /* ─────────────────────────────────────────────
+       buildAlerts – monta a fila ordenada por prioridade
+         1) Extintores irregulares
+         2) AVCB vencido
+         3) Extintores com vencimento próximo
+         4) AVCB próximo do vencimento
+         5) Checklist mensal pendente
+         6) Tudo ok (somente se fila vazia)
+      ───────────────────────────────────────────── */
+      function buildAlerts() {
+        // Cancela ciclo anterior
+        if (_alertTimer) { clearTimeout(_alertTimer); _alertTimer = null; }
+
+        const ext    = (ls("extintores") || []).filter((e) => e.status !== "BAIXADO");
+        const avcb   = ls("avcb");
+        const checks = ls("checklists") || [];
+        const mes    = today().slice(0, 7);
+
+        _alertQueue = [];
+
+        // 1 – Extintores IRREGULARES (red)
+        const vencidos = ext.filter((e) => extStatus(e) === "red");
+        if (vencidos.length) {
+          _alertQueue.push({
+            cls: "alert-red",
+            msg: `❌ <strong>${vencidos.length} extintor(es) IRREGULAR(ES)</strong> – recarga ou hidrostático vencido. Verifique imediatamente.`,
+          });
+        }
+
+        // 2 – AVCB VENCIDO
+        if (avcb) {
+          const d = daysTo(avcb.validade);
+          if (d < 0) {
+            _alertQueue.push({
+              cls: "alert-red",
+              msg: `❌ <strong>AVCB VENCIDO</strong> – Nº ${avcb.numero} – venceu em ${fmtDate(avcb.validade)}.`,
+            });
+          }
+        } else {
+          _alertQueue.push({
+            cls: "alert-yellow",
+            msg: `⚠️ <strong>AVCB</strong> não cadastrado no sistema.`,
+          });
+        }
+
+        // 3 – Extintores com VENCIMENTO PRÓXIMO (yellow)
+        const atencao = ext.filter((e) => extStatus(e) === "yellow");
+        if (atencao.length) {
+          _alertQueue.push({
+            cls: "alert-yellow",
+            msg: `⚠️ <strong>${atencao.length} extintor(es) com vencimento próximo</strong> – ação necessária nos próximos 30 dias.`,
+          });
+        }
+
+        // 4 – AVCB VENCE EM ATÉ 30 DIAS
+        if (avcb) {
+          const d = daysTo(avcb.validade);
+          if (d >= 0 && d <= 30) {
+            _alertQueue.push({
+              cls: "alert-yellow",
+              msg: `⚠️ <strong>AVCB vence em ${d} dia(s)</strong> – Nº ${avcb.numero} – ${fmtDate(avcb.validade)}.`,
+            });
+          }
+        }
+
+        // 5 – CHECKLIST MENSAL PENDENTE
+        const semCL = ext.filter(
+          (e) => !checks.some((c) => c.extId === e.id && c.data.slice(0, 7) === mes)
+        );
+        if (semCL.length) {
+          _alertQueue.push({
+            cls: "alert-yellow",
+            msg: `⚠️ <strong>${semCL.length} extintor(es) sem checklist</strong> este mês (${mes}).`,
+          });
+        }
+
+        // 6 – TUDO OK (somente quando não há outros alertas)
+        if (!_alertQueue.length) {
+          _alertQueue.push({
+            cls: "alert-green",
+            msg: `✅ <strong>Tudo regular</strong> – nenhuma irregularidade identificada.`,
+          });
+        }
+
+        _alertIdx = 0;
+        _exibirProximoAlerta();
+      }
+
+      /** Exibe o próximo alerta da fila com animação slide-in / slide-out */
+      function _exibirProximoAlerta() {
+        const toast = document.getElementById("alertToast");
+        if (!toast) return;
+
+        // Fila encerrada
+        if (_alertIdx >= _alertQueue.length) {
+          toast.style.display = "none";
+          toast.innerHTML = "";
+          return;
+        }
+
+        const item = _alertQueue[_alertIdx];
+        toast.style.display = "block";
+        toast.innerHTML =
+          `<div class="alert-item alert-toast-item ${item.cls} entering">${item.msg}</div>`;
+
+        // Após 1 s visível → anima saída (0.32 s) → próximo
+        _alertTimer = setTimeout(() => {
+          const el = toast.querySelector(".alert-toast-item");
+          if (el) {
+            el.classList.remove("entering");
+            el.classList.add("leaving");
+            setTimeout(() => {
+              _alertIdx++;
+              _exibirProximoAlerta();
+            }, 340);
+          } else {
+            _alertIdx++;
+            _exibirProximoAlerta();
+          }
+        }, 1300);
+      }
+
+      /* ──────────────────────────────────────────────
+   DASHBOARD
+────────────────────────────────────────────── */
+      function renderDashboard() {
+        const todosExt = ls("extintores") || [];
+        // KPIs e pendências consideram APENAS extintores ativos
+        const ext      = todosExt.filter((e) => e.status !== "BAIXADO");
+        const baixados = todosExt.filter((e) => e.status === "BAIXADO");
+        const checks   = ls("checklists") || [];
+        const avcb     = ls("avcb");
+        const total      = ext.length;
+        const irregulares = ext.filter((e) => extStatus(e) === "red").length;
+        const atencao     = ext.filter((e) => extStatus(e) === "yellow").length;
+        const regulares   = total - irregulares - atencao;
+        const mes         = today().slice(0, 7);
+        const pendentes   = ext.filter(
+          (e) => !checks.some((c) => c.extId === e.id && c.data.slice(0, 7) === mes),
+        ).length;
+
+        let avcbHtml =
+          '<div class="avcb-status" style="background:#fff3cd;color:#856404;">⚠️ AVCB não cadastrado</div>';
+        if (avcb) {
+          const d = daysTo(avcb.validade);
+          if (d < 0)
+            avcbHtml = `<div class="avcb-status" style="background:#f8d7da;color:#721c24;">❌ AVCB VENCIDO – ${fmtDate(avcb.validade)}</div>`;
+          else if (d <= 30)
+            avcbHtml = `<div class="avcb-status" style="background:#fff3cd;color:#856404;">⚠️ AVCB vence em ${d} dias – ${fmtDate(avcb.validade)}</div>`;
+          else
+            avcbHtml = `<div class="avcb-status" style="background:#d4edda;color:#155724;">✅ AVCB Válido – Nº ${avcb.numero} – Validade: ${fmtDate(avcb.validade)}</div>`;
+        }
+
+        return `
+  <div class="page-title">📊 Painel Geral</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-value">${total}</div><div class="kpi-label">Ativos</div></div>
+    <div class="kpi kpi-green"><div class="kpi-value">${regulares}</div><div class="kpi-label">Regulares</div></div>
+    <div class="kpi kpi-yellow"><div class="kpi-value">${atencao}</div><div class="kpi-label">Em Atenção</div></div>
+    <div class="kpi kpi-red"><div class="kpi-value">${irregulares}</div><div class="kpi-label">Irregulares</div></div>
+    <div class="kpi kpi-yellow"><div class="kpi-value">${pendentes}</div><div class="kpi-label">Checklist Pendente (mês)</div></div>
+    <div class="kpi" style="border-top-color:#95a5a6;cursor:pointer;" onclick="showPage('baixados')" title="Ver extintores baixados">
+      <div class="kpi-value" style="color:#7f8c8d;">${baixados.length}</div>
+      <div class="kpi-label">Baixados</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📄 Situação do AVCB</div>
+    ${avcbHtml}
+    ${avcb ? `<p style="font-size:12px;color:var(--muted);">Nº ${avcb.numero} | Emissão: ${fmtDate(avcb.emissao)} | Órgão: ${avcb.orgao || "–"}</p>` : ""}
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Últimas Inspeções Realizadas</div>
+    ${renderUltimasInspecoes(checks)}
+  </div>`;
+      }
+
+      function renderUltimasInspecoes(checks) {
+        if (!checks.length)
+          return '<p style="color:var(--muted);font-size:13px;">Nenhuma inspeção registrada.</p>';
+        const sorted = [...checks]
+          .sort((a, b) => b.data.localeCompare(a.data))
+          .slice(0, 5);
+        return sorted
+          .map((c) => {
+            const cls =
+              c.resultado === "Conforme"
+                ? "conforme"
+                : c.resultado === "Com Ressalvas"
+                  ? "ressalvas"
+                  : "nao-conforme";
+            return `<div class="hist-entry ${cls}">
+      <h4>${c.extPatrimonio} – ${c.extLocalizacao}</h4>
+      <p>Data: ${fmtDate(c.data)} | Resp: ${c.responsavel} | ${c.resultado}</p>
+    </div>`;
+          })
+          .join("");
+      }
+
+      /* ──────────────────────────────────────────────
+   EXTINTORES
+────────────────────────────────────────────── */
+      function renderExtintores() {
+        return `
+  <div class="page-title">🧯 Extintores Cadastrados</div>
+  <div class="btn-group">
+    <button class="btn btn-navy" onclick="abrirModalExtintor()">➕ Novo Extintor</button>
+    <button class="btn btn-green" onclick="exportarCSV()">📥 Exportar CSV</button>
+    <button class="btn btn-yellow" onclick="triggerImportCSV()">📤 Importar CSV</button>
+    <button class="btn btn-outline" onclick="enviarEmail()">✉️ Enviar por E-mail</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+  <div class="filters">
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="filtTipo" onchange="filterExtintores()">
+        <option value="">Todos</option>
+        <option>Água</option><option>PQS</option><option>CO2</option>
+        <option>Espuma</option><option>Classe K</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Setor / Localização</label>
+      <input type="text" id="filtLocal" placeholder="Filtrar..." oninput="filterExtintores()"/>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="filtStatus" onchange="filterExtintores()">
+        <option value="">Todos</option>
+        <option value="green">Regular</option>
+        <option value="yellow">Atenção</option>
+        <option value="red">Irregular</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Patrimônio</label>
+      <input type="text" id="filtPatrimonio" placeholder="Buscar..." oninput="filterExtintores()"/>
+    </div>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table id="tblExtintores">
+        <thead>
+          <tr>
+            <th>Patrimônio</th><th>Tipo</th><th>Classe</th>
+            <th>Capacidade</th><th>Localização</th>
+            <th>Recarga</th><th>Hidrostático</th>
+            <th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tblExtBody"></tbody>
+      </table>
+    </div>
+  </div>`;
+      }
+
+      function filterExtintores() {
+        const tipo = (document.getElementById("filtTipo") || {}).value || "";
+        const local =
+          (document.getElementById("filtLocal") || {}).value.toLowerCase() ||
+          "";
+        const status =
+          (document.getElementById("filtStatus") || {}).value || "";
+        const pat =
+          (
+            document.getElementById("filtPatrimonio") || {}
+          ).value.toLowerCase() || "";
+        // A lista principal exibe SOMENTE extintores ativos (não baixados)
+        const ext = (ls("extintores") || []).filter((e) => e.status !== "BAIXADO");
+        let filtered = ext.filter((e) => {
+          if (tipo && e.tipo !== tipo) return false;
+          if (local && !e.localizacao.toLowerCase().includes(local))
+            return false;
+          if (status && extStatus(e) !== status) return false;
+          if (pat && !e.patrimonio.toLowerCase().includes(pat)) return false;
+          return true;
+        });
+        renderExtBody(filtered);
+      }
+
+      function renderExtBody(ext) {
+        const body = document.getElementById("tblExtBody");
+        if (!body) return;
+        if (!ext.length) {
+          body.innerHTML =
+            '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px;">Nenhum extintor encontrado.</td></tr>';
+          return;
+        }
+        body.innerHTML = ext
+          .map(
+            (e) => `
+    <tr>
+      <td><strong>${e.patrimonio}</strong></td>
+      <td>${e.tipo}</td>
+      <td>${e.classe}</td>
+      <td>${e.capacidade}</td>
+      <td>${e.localizacao}</td>
+      <td>${fmtDate(e.recarga)}</td>
+      <td>${fmtDate(e.hidrostatico)}</td>
+      <td>${extStatusBadge(e)}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-xs btn-outline" onclick="abrirChecklist('${e.id}')">✅ Insp.</button>
+          <button class="btn btn-xs btn-yellow" onclick="editarExtintor('${e.id}')">✏️ Editar</button>
+          <button class="btn btn-xs btn-red" onclick="abrirModalBaixa('${e.id}')">⬇️ Baixar</button>
+          <button class="btn btn-xs btn-navy" onclick="verFichaExtintor('${e.id}')">📋 Ficha</button>
+        </div>
+      </td>
+    </tr>`,
+          )
+          .join("");
+      }
+
+      // Inicializa tabela após render
+      const _origRenderExt = renderExtintores;
+      function renderExtintoresAndLoad() {
+        const html = _origRenderExt();
+        setTimeout(() => {
+          filterExtintores();
+          buildAlerts();
+        }, 0);
+        return html;
+      }
+      // override
+      window.renderExtintores = renderExtintoresAndLoad;
+
+      /* ──────────────────────────────────────────────
+   MODAL EXTINTOR – ABRIR / SALVAR / EDITAR / EXCLUIR
+────────────────────────────────────────────── */
+      function abrirModalExtintor() {
+        editingId = null;
+        _pendingFoto = null;
+        document.getElementById("modalExtintorTitle").textContent =
+          "Cadastrar Extintor";
+        [
+          "fPatrimonio",
+          "fTipo",
+          "fClasse",
+          "fCapacidade",
+          "fLocalizacao",
+          "fFabricacao",
+          "fUltimaInspecao",
+          "fHidrostatico",
+          "fRecarga",
+          "fEmpresaMnt",
+          "fSelo",
+          "fObs",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+        // Reset foto
+        _resetFotoPreview();
+        // Habilita campo de foto para novo extintor
+        const fFotoLabel = document.getElementById("fFotoLabel");
+        if (fFotoLabel) fFotoLabel.style.display = "";
+        openModal("modalExtintor");
+      }
+
+      function editarExtintor(id) {
+        const ext = ls("extintores") || [];
+        const e = ext.find((x) => x.id === id);
+        if (!e) return;
+        editingId = id;
+        _pendingFoto = null;
+        document.getElementById("modalExtintorTitle").textContent =
+          "Editar Extintor";
+        document.getElementById("fPatrimonio").value = e.patrimonio || "";
+        document.getElementById("fTipo").value = e.tipo || "";
+        document.getElementById("fClasse").value = e.classe || "";
+        document.getElementById("fCapacidade").value = e.capacidade || "";
+        document.getElementById("fLocalizacao").value = e.localizacao || "";
+        document.getElementById("fFabricacao").value = e.fabricacao || "";
+        document.getElementById("fUltimaInspecao").value =
+          e.ultimaInspecao || "";
+        document.getElementById("fHidrostatico").value = e.hidrostatico || "";
+        document.getElementById("fRecarga").value = e.recarga || "";
+        document.getElementById("fEmpresaMnt").value = e.empresaMnt || "";
+        document.getElementById("fSelo").value = e.selo || "";
+        document.getElementById("fObs").value = e.obs || "";
+        // Carrega foto existente no preview
+        const box = document.getElementById("fotoPreviewBox");
+        const fFotoLabel = document.getElementById("fFotoLabel");
+        if (e.foto) {
+          if (box) box.innerHTML = `<img src="${e.foto}" alt="Foto do extintor"/>`;
+        } else {
+          _resetFotoPreview();
+        }
+        // BAIXADO: foto somente leitura
+        if (e.status === "BAIXADO" && fFotoLabel) {
+          fFotoLabel.style.display = "none";
+        } else if (fFotoLabel) {
+          fFotoLabel.style.display = "";
+        }
+        openModal("modalExtintor");
+      }
+
+      function salvarExtintor() {
+        const patrimonio = document.getElementById("fPatrimonio").value.trim();
+        const tipo = document.getElementById("fTipo").value;
+        const classe = document.getElementById("fClasse").value;
+        const capacidade = document.getElementById("fCapacidade").value.trim();
+        const localizacao = document
+          .getElementById("fLocalizacao")
+          .value.trim();
+        const fabricacao = document.getElementById("fFabricacao").value;
+        const ultimaInspecao = document.getElementById("fUltimaInspecao").value;
+        const hidrostatico = document.getElementById("fHidrostatico").value;
+        const recarga = document.getElementById("fRecarga").value;
+
+        if (
+          !patrimonio ||
+          !tipo ||
+          !classe ||
+          !capacidade ||
+          !localizacao ||
+          !ultimaInspecao ||
+          !hidrostatico ||
+          !recarga
+        ) {
+          alert("Preencha todos os campos obrigatórios (*).");
+          return;
+        }
+
+        const ext = ls("extintores") || [];
+        // Verificar duplicata de patrimônio
+        const dup = ext.find(
+          (e) => e.patrimonio === patrimonio && e.id !== editingId,
+        );
+        if (dup) {
+          alert("Já existe um extintor com este número de patrimônio.");
+          return;
+        }
+
+        const _now     = new Date().toISOString();
+        const _isNovo  = !editingId;
+        const _existing = _isNovo ? null : (ext.find((e) => e.id === editingId) || null);
+
+        // Foto: define o valor final e registra log se mudou
+        let _fotoFinal = _existing?.foto || null;
+        if (_pendingFoto) {
+          const _fotoAcao = (_existing?.foto) ? "substituicao" : "inclusao";
+          _fotoFinal = _pendingFoto;
+          _registrarLog(
+            `foto_extintor_${_fotoAcao}`,
+            currentUser.id,
+            currentUser.nome,
+            currentUser.nome,
+            { patrimonio }
+          );
+          _pendingFoto = null;
+        }
+
+        const obj = {
+          id: editingId || "e" + Date.now(),
+          patrimonio,
+          tipo,
+          classe,
+          capacidade,
+          localizacao,
+          fabricacao,
+          ultimaInspecao,
+          hidrostatico,
+          recarga,
+          empresaMnt: document.getElementById("fEmpresaMnt").value.trim(),
+          selo: document.getElementById("fSelo").value.trim(),
+          obs: document.getElementById("fObs").value.trim(),
+          foto: _fotoFinal,
+          criadoEm: _isNovo ? today() : (_existing?.criadoEm || today()),
+          // Rastreabilidade – cadastro
+          usuario_cadastro:        _isNovo ? currentUser.nome   : (_existing?.usuario_cadastro        || "–"),
+          perfil_usuario_cadastro: _isNovo ? currentUser.perfil : (_existing?.perfil_usuario_cadastro || "–"),
+          data_hora_cadastro:      _isNovo ? _now                : (_existing?.data_hora_cadastro      || _now),
+          historico_edicoes:       _isNovo ? []                  : [...(_existing?.historico_edicoes   || [])],
+        };
+
+        // Rastreabilidade – edição: calcula diff e registra
+        if (!_isNovo && _existing) {
+          const _campos = [
+            "patrimonio","tipo","classe","capacidade","localizacao",
+            "fabricacao","ultimaInspecao","hidrostatico","recarga","empresaMnt","selo","obs"
+          ];
+          const _alterados = _campos.filter((c) => (_existing[c] || "") !== (obj[c] || ""));
+          // Inclui "foto" no diff se houve troca
+          if (_fotoFinal !== (_existing.foto || null)) _alterados.push("foto");
+          if (_alterados.length) {
+            obj.historico_edicoes.push({
+              data_hora:        _now,
+              usuario:          currentUser.nome,
+              perfil:           currentUser.perfil,
+              campos_alterados: _alterados,
+            });
+          }
+          obj.usuario_ultima_edicao = currentUser.nome;
+          obj.perfil_usuario_edicao = currentUser.perfil;
+          obj.data_hora_edicao      = _now;
+        }
+
+        if (editingId) {
+          const idx = ext.findIndex((e) => e.id === editingId);
+          ext[idx] = obj;
+        } else {
+          ext.push(obj);
+        }
+        lsSet("extintores", ext);
+        closeModal("modalExtintor");
+        showPage("extintores");
+      }
+
+      // excluirExtintor é mantido como alias de segurança (não deleta, apenas redireciona)
+      function excluirExtintor(id) { abrirModalBaixa(id); }
+
+      /* ──────────────────────────────────────────────
+   FOTO DO EXTINTOR
+────────────────────────────────────────────── */
+      function _resetFotoPreview() {
+        const box = document.getElementById("fotoPreviewBox");
+        if (box) box.innerHTML = '<div class="foto-sem-foto">📷 Sem foto cadastrada</div>';
+        const inp = document.getElementById("fFoto");
+        if (inp) inp.value = "";
+      }
+
+      /**
+       * Lê o arquivo selecionado, redimensiona via canvas (máx 800×600)
+       * e armazena o Base64 resultante em _pendingFoto.
+       */
+      function handleFotoInput(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          alert("Selecione um arquivo de imagem válido (JPG ou PNG).");
+          input.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          const img = new Image();
+          img.onload = function () {
+            const MAX_W = 800, MAX_H = 600;
+            let w = img.width, h = img.height;
+            if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+            if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H; }
+            const canvas = document.createElement("canvas");
+            canvas.width  = w;
+            canvas.height = h;
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+            _pendingFoto = canvas.toDataURL("image/jpeg", 0.78);
+            const box = document.getElementById("fotoPreviewBox");
+            if (box) box.innerHTML = `<img src="${_pendingFoto}" alt="Foto do extintor" style="max-width:100%;max-height:220px;border-radius:6px;object-fit:contain;"/>`;
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      /* ──────────────────────────────────────────────
+   MENU MOBILE
+────────────────────────────────────────────── */
+      function toggleMobNav() {
+        const sidebar  = document.querySelector(".sidebar");
+        const overlay  = document.getElementById("mobOverlay");
+        if (!sidebar) return;
+        const isOpen = sidebar.classList.contains("open");
+        if (isOpen) { closeMobNav(); } else {
+          sidebar.classList.add("open");
+          if (overlay) overlay.classList.add("open");
+        }
+      }
+      function closeMobNav() {
+        const sidebar = document.querySelector(".sidebar");
+        const overlay = document.getElementById("mobOverlay");
+        if (sidebar) sidebar.classList.remove("open");
+        if (overlay) overlay.classList.remove("open");
+      }
+
+      /* ──────────────────────────────────────────────
+   CHECKLIST
+────────────────────────────────────────────── */
+      const CHECKLIST_ITEMS = [
+        "Extintor está no local correto e sinalizado",
+        "Acesso ao extintor está desobstruído",
+        "Lacre / selo intacto",
+        "Manômetro na faixa verde (quando aplicável)",
+        "Mangueira em boas condições",
+        "Gatilho e trava em perfeitas condições",
+        "Corpo do extintor sem ferrugem, amassados ou vazamentos",
+        "Etiqueta de inspeção legível",
+        "Instruções de uso visíveis",
+      ];
+
+      function renderChecklistPage() {
+        // REGRA: apenas extintores ATIVOS aparecem no checklist mensal
+        const ext    = (ls("extintores") || []).filter((e) => e.status !== "BAIXADO");
+        const checks = ls("checklists") || [];
+        const mes    = today().slice(0, 7);
+
+        const realizadas = ext.filter((e) =>
+          checks.some((c) => c.extId === e.id && c.data.slice(0, 7) === mes)
+        ).length;
+        const pendentes = ext.length - realizadas;
+
+        const rows = ext.map((e) => {
+          const cl   = checks.filter((c) => c.extId === e.id && c.data.slice(0, 7) === mes);
+          const done = cl.length > 0;
+          const last = done ? cl[cl.length - 1] : null;
+          return `<tr>
+      <td><strong>${e.patrimonio}</strong></td>
+      <td>${e.tipo}</td>
+      <td>${e.localizacao}</td>
+      <td>${done
+        ? `<span class="badge ${last.resultado === "Conforme" ? "badge-green" : last.resultado === "Com Ressalvas" ? "badge-yellow" : "badge-red"}">${last.resultado}</span>`
+        : '<span class="badge badge-gray">Pendente</span>'}</td>
+      <td>${done ? fmtDate(last.data) : "–"}</td>
+      <td>${done ? last.responsavel : "–"}</td>
+      <td>
+        <button class="btn btn-xs btn-navy" onclick="abrirChecklist('${e.id}')">
+          ${done ? "🔄 Nova Insp." : "✅ Realizar"}
+        </button>
+      </td>
+    </tr>`;
+        }).join("");
+
+        return `
+  <div class="page-title">✅ Checklist de Inspeção Mensal – NR-23</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+    Mês de referência: <strong>${mes}</strong> —
+    Ativos: <strong>${ext.length}</strong> |
+    Realizadas: <strong>${realizadas}</strong> |
+    Pendentes: <strong>${pendentes}</strong>
+  </p>
+  ${pendentes === 0 && ext.length > 0
+    ? '<div class="alert-item alert-green" style="margin-bottom:12px;">✅ Todos os extintores ativos foram inspecionados este mês.</div>'
+    : ""}
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Patrimônio</th><th>Tipo</th><th>Localização</th><th>Situação</th><th>Data</th><th>Responsável</th><th>Ação</th></tr>
+        </thead>
+        <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">Nenhum extintor ativo cadastrado.</td></tr>'}</tbody>
+      </table>
+    </div>
+  </div>`;
+      }
+
+      function abrirChecklist(extId) {
+        const ext = (ls("extintores") || []).find((e) => e.id === extId);
+        if (!ext) {
+          alert("Extintor não encontrado.");
+          return;
+        }
+        // REGRA: extintor BAIXADO não pode receber novas inspeções
+        if (ext.status === "BAIXADO") {
+          _registrarLog("checklist_negado", currentUser.id, currentUser.nome);
+          alert(
+            `O extintor ${ext.patrimonio} está BAIXADO desde ${fmtDate(ext.data_baixa)}.\n` +
+            `Novas inspeções NR-23 não são permitidas para extintores baixados.`
+          );
+          return;
+        }
+        checklistExtId = extId;
+        const body = document.getElementById("modalChecklistBody");
+        document.getElementById("modalChecklistTitle").textContent =
+          `Checklist NR-23 – ${ext.patrimonio} – ${ext.localizacao}`;
+        body.innerHTML = `
+    <div class="form-row" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>Data da Inspeção *</label>
+        <input type="date" id="clData" value="${today()}"/>
+      </div>
+      <div class="form-group">
+        <label>Responsável *</label>
+        <input type="text" id="clResp" value="${currentUser ? currentUser.nome : ""}" placeholder="Nome do inspetor"/>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      ${CHECKLIST_ITEMS.map(
+        (item, i) => `
+        <div class="checklist-item">
+          <div class="checklist-label">${i + 1}. ${item}</div>
+          <div class="checklist-options">
+            <button class="cl-opt" id="cl_${i}_sim" onclick="toggleCL(${i},'sim')">SIM</button>
+            <button class="cl-opt" id="cl_${i}_nao" onclick="toggleCL(${i},'nao')">NÃO</button>
+            <button class="cl-opt" id="cl_${i}_na"  onclick="toggleCL(${i},'na')">N/A</button>
+          </div>
+        </div>`,
+      ).join("")}
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Observações</label>
+      <textarea id="clObs" rows="2" placeholder="Observações técnicas da inspeção..."></textarea>
+    </div>
+    <div id="clResultado" style="margin-bottom:14px;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeModal('modalChecklist')">Cancelar</button>
+      <button class="btn btn-navy" onclick="salvarChecklist()">💾 Salvar Inspeção</button>
+    </div>`;
+        openModal("modalChecklist");
+      }
+
+      // Estado das respostas do checklist (chave = índice do item, valor = 'sim'|'nao'|'na')
+      const clRespostas = {};
+
+      function toggleCL(i, val) {
+        clRespostas[i] = val;
+        ["sim", "nao", "na"].forEach((v) => {
+          const btn = document.getElementById(`cl_${i}_${v}`);
+          if (btn) btn.className = "cl-opt" + (v === val ? " " + v : "");
+        });
+        calcResultado();
+      }
+
+      // Exibe o resultado parcial enquanto o usuário preenche o checklist.
+      // Só mostra um resultado final quando todos os itens estiverem respondidos.
+      function calcResultado() {
+        const total  = CHECKLIST_ITEMS.length;
+        const qtdNao = CHECKLIST_ITEMS.filter((_, i) => clRespostas[i] === "nao").length;
+        const qtdNA  = CHECKLIST_ITEMS.filter((_, i) => clRespostas[i] === "na").length;
+        const qtdSim = CHECKLIST_ITEMS.filter((_, i) => clRespostas[i] === "sim").length;
+        const respondidos = qtdNao + qtdNA + qtdSim;
+
+        const el = document.getElementById("clResultado");
+        if (!el) return;
+
+        // Enquanto houver itens sem resposta, mostra progresso — sem resultado definitivo
+        if (respondidos < total) {
+          el.innerHTML = `<span class="badge badge-gray" style="font-size:13px;padding:6px 16px;">
+            📝 ${respondidos} de ${total} itens respondidos
+          </span>`;
+          return;
+        }
+
+        // Todos respondidos — aplica a lógica exata da NR-23
+        let res, cls;
+        if (qtdNao > 0) {
+          // Regra 1: qualquer NÃO → Não Conforme
+          res = "❌ Não Conforme";
+          cls = "badge-red";
+        } else if (qtdNA > 0) {
+          // Regra 3: sem NÃO, mas ao menos um N/A → Com Ressalvas
+          res = "⚠️ Com Ressalvas";
+          cls = "badge-yellow";
+        } else {
+          // Regra 2: todos SIM → Conforme
+          res = "✅ Conforme";
+          cls = "badge-green";
+        }
+        el.innerHTML = `<span class="badge ${cls}" style="font-size:13px;padding:6px 16px;">Resultado: ${res}</span>`;
+      }
+
+      // Retorna o resultado final com base em clRespostas (usado ao salvar).
+      // Pré-condição: todos os itens já estão respondidos (validado em salvarChecklist).
+      function getResultado() {
+        const qtdNao = CHECKLIST_ITEMS.filter((_, i) => clRespostas[i] === "nao").length;
+        const qtdNA  = CHECKLIST_ITEMS.filter((_, i) => clRespostas[i] === "na").length;
+        if (qtdNao > 0) return "Não Conforme";
+        if (qtdNA  > 0) return "Com Ressalvas";
+        return "Conforme";
+      }
+
+      function salvarChecklist() {
+        const data = document.getElementById("clData").value;
+        const resp = document.getElementById("clResp").value.trim();
+        if (!data || !resp) {
+          alert("Informe a data e o nome do responsável.");
+          return;
+        }
+
+        // Validação: todos os itens devem estar respondidos antes de salvar
+        const naoRespondidos = CHECKLIST_ITEMS
+          .map((item, i) => ({ item, i }))
+          .filter(({ i }) => !clRespostas[i]);
+        if (naoRespondidos.length > 0) {
+          alert(
+            `Responda todos os itens do checklist antes de salvar.\n\n` +
+            `Pendente(s):\n` +
+            naoRespondidos.map(({ item, i }) => `${i + 1}. ${item}`).join("\n")
+          );
+          return;
+        }
+
+        const ext = (ls("extintores") || []).find((e) => e.id === checklistExtId);
+
+        // Barreira de segurança: bloquear se o extintor estiver BAIXADO
+        if (ext && ext.status === "BAIXADO") {
+          _registrarLog("checklist_negado", currentUser.id, currentUser.nome);
+          alert(`O extintor ${ext.patrimonio} está BAIXADO. Inspeção cancelada.`);
+          closeModal("modalChecklist");
+          return;
+        }
+
+        // Bloquear se a data da inspeção for posterior à data de baixa
+        if (ext && ext.data_baixa && data > ext.data_baixa) {
+          alert(
+            `A data da inspeção (${fmtDate(data)}) é posterior à data de baixa ` +
+            `do extintor (${fmtDate(ext.data_baixa)}).\nInspeção não permitida.`
+          );
+          return;
+        }
+
+        const checks = ls("checklists") || [];
+
+        // Captura respostas e resultado ANTES de limpar o estado
+        const respostas = {};
+        CHECKLIST_ITEMS.forEach((_, i) => { respostas[i] = clRespostas[i]; });
+        const resultado = getResultado();
+
+        // Limpa estado do checklist em memória
+        Object.keys(clRespostas).forEach((k) => delete clRespostas[k]);
+
+        const obj = {
+          id: "cl" + Date.now(),
+          extId: checklistExtId,
+          extPatrimonio: ext ? ext.patrimonio : "",
+          extLocalizacao: ext ? ext.localizacao : "",
+          data,
+          responsavel: resp,
+          obs: document.getElementById("clObs").value.trim(),
+          respostas,
+          resultado,
+          // Rastreabilidade
+          usuario_sistema:   currentUser.nome,
+          perfil_usuario:    currentUser.perfil,
+          data_hora_inspecao: new Date().toISOString(),
+        };
+        checks.push(obj);
+        lsSet("checklists", checks);
+        closeModal("modalChecklist");
+        showPage("checklist");
+      }
+
+      /* ──────────────────────────────────────────────
+   HISTÓRICO
+────────────────────────────────────────────── */
+      function renderHistorico() {
+        const checks = [...(ls("checklists") || [])].sort((a, b) =>
+          b.data.localeCompare(a.data),
+        );
+        const rows = checks
+          .map(
+            (c) => `
+    <tr>
+      <td>${fmtDate(c.data)}</td>
+      <td><strong>${c.extPatrimonio}</strong></td>
+      <td>${c.extLocalizacao}</td>
+      <td>${c.responsavel}</td>
+      <td>${c.usuario_sistema || "–"}</td>
+      <td><span style="font-size:11px;color:var(--muted);">${c.perfil_usuario || "–"}</span></td>
+      <td><span class="badge ${c.resultado === "Conforme" ? "badge-green" : c.resultado === "Com Ressalvas" ? "badge-yellow" : "badge-red"}">${c.resultado}</span></td>
+      <td>${c.obs || "–"}</td>
+    </tr>`,
+          )
+          .join("");
+        return `
+  <div class="page-title">📋 Histórico de Inspeções</div>
+  <div class="btn-group">
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Patrimônio</th><th>Localização</th><th>Responsável</th><th>Usuário (Sistema)</th><th>Perfil</th><th>Resultado</th><th>Observações</th></tr>
+        </thead>
+        <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Nenhuma inspeção registrada.</td></tr>'}</tbody>
+      </table>
+    </div>
+  </div>`;
+      }
+
+      /* ──────────────────────────────────────────────
+   AVCB
+────────────────────────────────────────────── */
+      function renderAVCB() {
+        const avcb = ls("avcb");
+        let statusHtml = "";
+        if (avcb) {
+          const d = daysTo(avcb.validade);
+          if (d < 0)
+            statusHtml = `<div class="avcb-status" style="background:#f8d7da;color:#721c24;">❌ AVCB VENCIDO em ${fmtDate(avcb.validade)} (${Math.abs(d)} dias atrás)</div>`;
+          else if (d <= 30)
+            statusHtml = `<div class="avcb-status" style="background:#fff3cd;color:#856404;">⚠️ AVCB vence em ${d} dias – ${fmtDate(avcb.validade)}</div>`;
+          else
+            statusHtml = `<div class="avcb-status" style="background:#d4edda;color:#155724;">✅ AVCB Válido – Vence em ${d} dias (${fmtDate(avcb.validade)})</div>`;
+        }
+
+        return `
+  <div class="page-title">📄 AVCB – Auto de Vistoria do Corpo de Bombeiros</div>
+  <div class="btn-group">
+    <button class="btn btn-navy" onclick="abrirModalAVCB()">✏️ ${avcb ? "Editar" : "Cadastrar"} AVCB</button>
+  </div>
+  ${
+    avcb
+      ? `
+  ${statusHtml}
+  <div class="card">
+    <div class="card-title">📋 Dados do AVCB</div>
+    <table style="width:100%;font-size:13px;">
+      <tr><td style="padding:6px 0;color:var(--muted);width:200px;">Número</td><td><strong>${avcb.numero}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:var(--muted);">Data de Emissão</td><td>${fmtDate(avcb.emissao)}</td></tr>
+      <tr><td style="padding:6px 0;color:var(--muted);">Data de Validade</td><td>${fmtDate(avcb.validade)}</td></tr>
+      <tr><td style="padding:6px 0;color:var(--muted);">Órgão Emissor</td><td>${avcb.orgao || "–"}</td></tr>
+      <tr><td style="padding:6px 0;color:var(--muted);">Observações</td><td>${avcb.obs || "–"}</td></tr>
+    </table>
+  </div>`
+      : '<div class="card"><p style="color:var(--muted);">AVCB ainda não cadastrado. Clique em "Cadastrar AVCB" para começar.</p></div>'
+  }`;
+      }
+
+      function abrirModalAVCB() {
+        const avcb = ls("avcb");
+        if (avcb) {
+          document.getElementById("fAvcbNum").value = avcb.numero || "";
+          document.getElementById("fAvcbEmissao").value = avcb.emissao || "";
+          document.getElementById("fAvcbValidade").value = avcb.validade || "";
+          document.getElementById("fAvcbOrgao").value = avcb.orgao || "";
+          document.getElementById("fAvcbObs").value = avcb.obs || "";
+        } else {
+          [
+            "fAvcbNum",
+            "fAvcbEmissao",
+            "fAvcbValidade",
+            "fAvcbOrgao",
+            "fAvcbObs",
+          ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+        }
+        openModal("modalAVCB");
+      }
+
+      function salvarAVCB() {
+        const numero = document.getElementById("fAvcbNum").value.trim();
+        const emissao = document.getElementById("fAvcbEmissao").value;
+        const validade = document.getElementById("fAvcbValidade").value;
+        if (!numero || !emissao || !validade) {
+          alert("Preencha número, emissão e validade.");
+          return;
+        }
+        lsSet("avcb", {
+          numero,
+          emissao,
+          validade,
+          orgao: document.getElementById("fAvcbOrgao").value.trim(),
+          obs: document.getElementById("fAvcbObs").value.trim(),
+        });
+        closeModal("modalAVCB");
+        showPage("avcb");
+      }
+
+      /* ──────────────────────────────────────────────
+   RELATÓRIOS
+────────────────────────────────────────────── */
+      function renderRelatorios() {
+        return `
+  <div class="page-title">📁 Relatórios e Exportação</div>
+  <div class="card">
+    <div class="card-title">🖨️ Impressão de Relatórios</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+      Os relatórios são gerados com cabeçalho da empresa, data/hora e usuário responsável.
+    </p>
+    <div class="btn-group">
+      <button class="btn btn-navy" onclick="imprimirListaGeral()">📋 Lista Geral de Extintores</button>
+      <button class="btn btn-outline" onclick="imprimirHistorico()">📊 Histórico de Inspeções</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📥 Exportação e Importação de Dados</div>
+    <div class="btn-group">
+      <button class="btn btn-green" onclick="exportarCSV()">📥 Exportar CSV (Excel)</button>
+      <button class="btn btn-yellow" onclick="triggerImportCSV()">📤 Importar CSV</button>
+      <button class="btn btn-outline" onclick="enviarEmail()">✉️ Enviar por E-mail</button>
+    </div>
+  </div>`;
+      }
+
+      function imprimirListaGeral() {
+        const ext = (ls("extintores") || []).filter((e) => e.status !== "BAIXADO");
+        const agora = new Date().toLocaleString("pt-BR");
+        const rows = ext
+          .map(
+            (e) => `
+    <tr>
+      <td>${e.patrimonio}</td><td>${e.tipo}</td><td>${e.classe}</td>
+      <td>${e.capacidade}</td><td>${e.localizacao}</td>
+      <td>${fmtDate(e.recarga)}</td><td>${fmtDate(e.hidrostatico)}</td>
+      <td>${extStatus(e) === "red" ? "Irregular" : extStatus(e) === "yellow" ? "Atenção" : "Regular"}</td>
+      <td>${e.usuario_cadastro || "–"}</td>
+      <td>${e.perfil_usuario_cadastro || "–"}</td>
+      <td>${e.data_hora_cadastro ? new Date(e.data_hora_cadastro).toLocaleString("pt-BR") : (fmtDate(e.criadoEm) || "–")}</td>
+    </tr>`,
+          )
+          .join("");
+        const win = window.open("", "_blank");
+        win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8"/><title>Lista de Extintores</title>
+    <style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px;}
+    h1{font-size:16px;}h2{font-size:13px;color:#555;margin-bottom:4px;}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;}
+    th{background:#1a3a5c;color:#fff;}
+    @media print{button{display:none!important;}}
+    </style></head><body>
+    <h1>Laticínios Centro Oeste Indústria</h1>
+    <h2>Sistema de Gestão de Extintores – NR-23 (Ativos)</h2>
+    <p>Data/Hora: ${agora} | Usuário: ${currentUser?.nome || "–"} | Total: ${ext.length} extintor(es)</p>
+    <table><thead><tr>
+      <th>Patrimônio</th><th>Tipo</th><th>Classe</th><th>Capacidade</th>
+      <th>Localização</th><th>Recarga</th><th>Hidrostático</th><th>Status</th>
+      <th>Cadastrado por</th><th>Perfil</th><th>Data Cadastro</th>
+    </tr></thead><tbody>${rows}</tbody></table>
+    <br/><button onclick="window.print()">Imprimir</button>
+    </body></html>`);
+        win.document.close();
+      }
+
+      /* ──────────────────────────────────────────────
+   FICHA DO EXTINTOR – AUDITORIA DE CICLO DE VIDA
+────────────────────────────────────────────── */
+      function verFichaExtintor(id) {
+        const extintores = ls("extintores") || [];
+        const e = extintores.find((x) => x.id === id);
+        if (!e) return;
+
+        const checklists = (ls("checklists") || [])
+          .filter((c) => c.extId === id)
+          .sort((a, b) => b.data.localeCompare(a.data));
+
+        const _fmtISO = (iso) => iso
+          ? new Date(iso).toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" })
+          : "–";
+
+        // Bloco: foto
+        const blocoFoto = e.foto
+          ? `<div style="text-align:center;margin-bottom:14px;">
+               <img src="${e.foto}" alt="Foto do extintor ${e.patrimonio}"
+                 style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--border);object-fit:contain;"/>
+             </div>`
+          : `<div style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:12px;padding:14px;background:#fafbfd;border:2px dashed var(--border);border-radius:8px;">
+               📷 Sem foto cadastrada
+             </div>`;
+
+        // Bloco: dados básicos
+        const blocoBasico = `
+          <table style="width:100%;font-size:13px;border-collapse:collapse;">
+            <tr><td style="color:var(--muted);padding:4px 0;width:180px;">Patrimônio</td><td><strong>${e.patrimonio}</strong></td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Tipo / Classe</td><td>${e.tipo} – ${e.classe}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Capacidade</td><td>${e.capacidade}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Localização</td><td>${e.localizacao}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Fabricação</td><td>${fmtDate(e.fabricacao) || "–"}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Recarga</td><td>${fmtDate(e.recarga) || "–"}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Hidrostático</td><td>${fmtDate(e.hidrostatico) || "–"}</td></tr>
+            <tr><td style="color:var(--muted);padding:4px 0;">Status</td><td>${extStatusBadge(e)}</td></tr>
+          </table>`;
+
+        // Bloco: cadastro
+        const blocoCadastro = `
+          <div style="background:#f0f4fa;border-radius:6px;padding:10px 14px;margin-top:10px;font-size:13px;">
+            <strong>Cadastro</strong><br/>
+            Usuário: <strong>${e.usuario_cadastro || "–"}</strong>
+            &nbsp;|&nbsp; Perfil: ${e.perfil_usuario_cadastro || "–"}
+            &nbsp;|&nbsp; Data/Hora: ${_fmtISO(e.data_hora_cadastro) || fmtDate(e.criadoEm) || "–"}
+          </div>`;
+
+        // Bloco: última edição
+        const blocoEdicao = (e.usuario_ultima_edicao) ? `
+          <div style="background:#fff8e1;border-radius:6px;padding:10px 14px;margin-top:8px;font-size:13px;">
+            <strong>Última Edição</strong><br/>
+            Usuário: <strong>${e.usuario_ultima_edicao}</strong>
+            &nbsp;|&nbsp; Perfil: ${e.perfil_usuario_edicao || "–"}
+            &nbsp;|&nbsp; Data/Hora: ${_fmtISO(e.data_hora_edicao)}
+          </div>` : "";
+
+        // Bloco: histórico de edições
+        const histEdit = e.historico_edicoes || [];
+        const blocoHistEdit = histEdit.length ? `
+          <div style="margin-top:10px;">
+            <strong style="font-size:13px;">Histórico de Edições (${histEdit.length})</strong>
+            <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px;">
+              <thead><tr style="background:#e8edf5;">
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Data/Hora</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Usuário</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Perfil</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Campos Alterados</th>
+              </tr></thead>
+              <tbody>
+                ${[...histEdit].reverse().map(h => `
+                  <tr>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${_fmtISO(h.data_hora)}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${h.usuario}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${h.perfil || "–"}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${(h.campos_alterados || []).join(", ")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>` : "";
+
+        // Bloco: baixa
+        const blocoBaixa = e.status === "BAIXADO" ? `
+          <div style="background:#fdecea;border-radius:6px;padding:10px 14px;margin-top:10px;font-size:13px;border-left:3px solid var(--red2);">
+            <strong>Baixa</strong><br/>
+            Usuário: <strong>${e.usuario_baixa || "–"}</strong>
+            &nbsp;|&nbsp; Perfil: ${e.perfil_usuario_baixa || "–"}
+            &nbsp;|&nbsp; Data/Hora: ${_fmtISO(e.data_hora_baixa) || fmtDate(e.data_baixa) || "–"}<br/>
+            Motivo: ${e.motivo_baixa || "–"}${e.descricao_baixa ? " — " + e.descricao_baixa : ""}
+          </div>` : "";
+
+        // Bloco: reativação
+        const blocoReat = e.data_hora_reativacao ? `
+          <div style="background:#e8f5e9;border-radius:6px;padding:10px 14px;margin-top:8px;font-size:13px;border-left:3px solid var(--green);">
+            <strong>Reativação</strong><br/>
+            Usuário: <strong>${e.usuario_reativacao || "–"}</strong>
+            &nbsp;|&nbsp; Perfil: ${e.perfil_usuario_reativacao || "–"}
+            &nbsp;|&nbsp; Data/Hora: ${_fmtISO(e.data_hora_reativacao)}<br/>
+            Justificativa: ${e.justificativa_reat || "–"}
+          </div>` : "";
+
+        // Bloco: inspeções
+        const blocoInsp = checklists.length ? `
+          <div style="margin-top:10px;">
+            <strong style="font-size:13px;">Inspeções Registradas (${checklists.length})</strong>
+            <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px;">
+              <thead><tr style="background:#e8edf5;">
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Data</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Responsável</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Usuário (Sistema)</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Perfil</th>
+                <th style="padding:5px 8px;text-align:left;border:1px solid #dde3ee;">Resultado</th>
+              </tr></thead>
+              <tbody>
+                ${checklists.map(c => `
+                  <tr>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${fmtDate(c.data)}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${c.responsavel}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${c.usuario_sistema || "–"}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">${c.perfil_usuario || "–"}</td>
+                    <td style="padding:4px 8px;border:1px solid #dde3ee;">
+                      <span style="font-weight:600;color:${c.resultado==="Conforme"?"#155724":c.resultado==="Com Ressalvas"?"#856404":"#721c24"};">${c.resultado}</span>
+                    </td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>` :
+          `<div style="margin-top:10px;font-size:13px;color:var(--muted);">Nenhuma inspeção registrada.</div>`;
+
+        document.getElementById("fichaExtintorBody").innerHTML =
+          blocoFoto + blocoBasico + blocoCadastro + blocoEdicao + blocoHistEdit +
+          blocoBaixa + blocoReat + blocoInsp;
+        openModal("modalFichaExtintor");
+      }
+
+      function imprimirHistorico() {
+        const checks = [...(ls("checklists") || [])].sort((a, b) =>
+          b.data.localeCompare(a.data),
+        );
+        const agora = new Date().toLocaleString("pt-BR");
+        const rows = checks
+          .map(
+            (c) => `
+    <tr>
+      <td>${fmtDate(c.data)}</td><td>${c.extPatrimonio}</td>
+      <td>${c.extLocalizacao}</td><td>${c.responsavel}</td>
+      <td>${c.resultado}</td><td>${c.obs || "–"}</td>
+    </tr>`,
+          )
+          .join("");
+        const win = window.open("", "_blank");
+        win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8"/><title>Histórico de Inspeções</title>
+    <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px;}
+    h1{font-size:16px;}h2{font-size:13px;color:#555;margin-bottom:4px;}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
+    th{background:#1a3a5c;color:#fff;}
+    @media print{button{display:none!important;}}
+    </style></head><body>
+    <h1>Laticínios Centro Oeste Indústria</h1>
+    <h2>Histórico de Inspeções NR-23</h2>
+    <p>Data/Hora: ${agora} | Usuário: ${currentUser?.nome || "–"}</p>
+    <table><thead><tr>
+      <th>Data</th><th>Patrimônio</th><th>Localização</th>
+      <th>Responsável</th><th>Resultado</th><th>Observações</th>
+    </tr></thead><tbody>${rows}</tbody></table>
+    <br/><button onclick="window.print()">Imprimir</button>
+    </body></html>`);
+        win.document.close();
+      }
+
+      /* ──────────────────────────────────────────────
+   EXPORTAR CSV
+────────────────────────────────────────────── */
+      function exportarCSV() {
+        const ext = ls("extintores") || [];
+        const checks = ls("checklists") || [];
+        const header = [
+          "Patrimônio",
+          "Tipo",
+          "Classe",
+          "Capacidade",
+          "Localização",
+          "Fabricação",
+          "Última Inspeção",
+          "Hidrostático",
+          "Recarga",
+          "Empresa Manutenção",
+          "Selo/Lacre",
+          "Status",
+          "Última Checklist",
+          "Resultado Checklist",
+          "Observações",
+        ];
+        const rows = ext.map((e) => {
+          const cls = [...checks]
+            .filter((c) => c.extId === e.id)
+            .sort((a, b) => b.data.localeCompare(a.data));
+          const last = cls[0];
+          const status =
+            extStatus(e) === "red"
+              ? "Irregular"
+              : extStatus(e) === "yellow"
+                ? "Atenção"
+                : "Regular";
+          return [
+            e.patrimonio,
+            e.tipo,
+            e.classe,
+            e.capacidade,
+            e.localizacao,
+            fmtDate(e.fabricacao),
+            fmtDate(e.ultimaInspecao),
+            fmtDate(e.hidrostatico),
+            fmtDate(e.recarga),
+            e.empresaMnt || "",
+            e.selo || "",
+            status,
+            last ? fmtDate(last.data) : "Sem inspeção",
+            last ? last.resultado : "–",
+            e.obs || "",
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(",");
+        });
+        const csv = "\uFEFF" + [header.join(","), ...rows].join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "extintores_laticinios_centro_oeste.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      /* ──────────────────────────────────────────────
+   IMPORTAR CSV
+────────────────────────────────────────────── */
+
+      // Abre o seletor de arquivo (qualquer usuário autenticado)
+      function triggerImportCSV() {
+        if (!currentUser) {
+          alert("Faça login para continuar.");
+          return;
+        }
+        const inp = document.getElementById("csvFileInput");
+        inp.value = ""; // permite reimportar o mesmo arquivo
+        inp.click();
+      }
+
+      // Callback chamado quando o arquivo é selecionado
+      function handleCSVFile(evt) {
+        const file = evt.target.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+          alert("Selecione um arquivo com extensão .csv");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          processCSV(e.target.result);
+        };
+        reader.onerror = function () {
+          alert("Erro ao ler o arquivo. Tente novamente.");
+        };
+        reader.readAsText(file, "UTF-8");
+      }
+
+      // Converte data dd/mm/yyyy → yyyy-mm-dd; retorna null se inválida
+      function parseDateBR(str) {
+        if (!str || str.trim() === "–" || str.trim() === "") return null;
+        const parts = str.trim().split("/");
+        if (parts.length !== 3) return null;
+        const [d, m, y] = parts;
+        if (d.length < 1 || m.length < 1 || y.length !== 4) return null;
+        const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        // Verifica se é uma data real
+        const dt = new Date(iso);
+        if (isNaN(dt.getTime())) return null;
+        return iso;
+      }
+
+      // Parser de CSV que respeita campos entre aspas (incluindo vírgulas internas)
+      function parseCSVLine(line) {
+        const result = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              cur += '"'; i++; // aspas escapadas ""
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (ch === "," && !inQuotes) {
+            result.push(cur); cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+        result.push(cur);
+        return result;
+      }
+
+      function processCSV(raw) {
+        // Remove BOM se presente
+        const text = raw.replace(/^\uFEFF/, "");
+        const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+        if (lines.length < 2) {
+          showImportResult(0, 0, ["Arquivo vazio ou sem dados."]); return;
+        }
+
+        // Cabeçalho esperado (posições fixas)
+        // 0:Patrimônio 1:Tipo 2:Classe 3:Capacidade 4:Localização
+        // 5:Fabricação 6:Última Inspeção 7:Hidrostático 8:Recarga
+        // 9:Empresa Manutenção 10:Selo/Lacre 11:Status
+        // 12:Última Checklist 13:Resultado Checklist 14:Observações
+        const header = parseCSVLine(lines[0]);
+        // Verifica coluna mínima obrigatória
+        if (header.length < 9) {
+          showImportResult(0, 0, ["Formato de CSV inválido. Use o arquivo exportado por este sistema."]);
+          return;
+        }
+
+        const extintores = ls("extintores") || [];
+        const erros = [];
+        let criados = 0;
+        let atualizados = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const row = parseCSVLine(lines[i]);
+          const linha = i + 1; // número da linha para mensagens de erro
+
+          // Extrai campos (strip de espaços extras)
+          const patrimonio  = (row[0] || "").trim();
+          const tipo        = (row[1] || "").trim();
+          const classe      = (row[2] || "").trim();
+          const capacidade  = (row[3] || "").trim();
+          const localizacao = (row[4] || "").trim();
+          const fabricacaoRaw     = (row[5] || "").trim();
+          const ultimaInspecaoRaw = (row[6] || "").trim();
+          const hidrostaticRaw    = (row[7] || "").trim();
+          const recargaRaw        = (row[8] || "").trim();
+          const empresaMnt  = (row[9]  || "").trim();
+          const selo        = (row[10] || "").trim();
+          // col 11 = Status (calculado, ignorado na importação)
+          const obsInp      = (row[14] || "").trim();
+
+          // ── Validações de campos obrigatórios ──
+          const camposFaltando = [];
+          if (!patrimonio)  camposFaltando.push("Patrimônio");
+          if (!tipo)        camposFaltando.push("Tipo");
+          if (!classe)      camposFaltando.push("Classe");
+          if (!capacidade)  camposFaltando.push("Capacidade");
+          if (!localizacao) camposFaltando.push("Localização");
+          if (camposFaltando.length) {
+            erros.push(`Linha ${linha}: campos obrigatórios ausentes – ${camposFaltando.join(", ")}.`);
+            continue;
+          }
+
+          // ── Validação de tipo ──
+          const tiposValidos = ["Água", "PQS", "CO2", "Espuma", "Classe K"];
+          if (!tiposValidos.includes(tipo)) {
+            erros.push(`Linha ${linha} (${patrimonio}): tipo inválido "${tipo}".`);
+            continue;
+          }
+
+          // ── Conversão e validação de datas ──
+          const fabricacao     = parseDateBR(fabricacaoRaw);
+          const ultimaInspecao = parseDateBR(ultimaInspecaoRaw);
+          const hidrostatico   = parseDateBR(hidrostaticRaw);
+          const recarga        = parseDateBR(recargaRaw);
+
+          const datesErro = [];
+          // fabricacao é opcional — sem validação obrigatória
+          if (!ultimaInspecao) datesErro.push(`Última Inspeção ("${ultimaInspecaoRaw}")`);
+          if (!hidrostatico)   datesErro.push(`Hidrostático ("${hidrostaticRaw}")`);
+          if (!recarga)        datesErro.push(`Recarga ("${recargaRaw}")`);
+          if (datesErro.length) {
+            erros.push(`Linha ${linha} (${patrimonio}): datas inválidas – ${datesErro.join("; ")}.`);
+            continue;
+          }
+
+          // ── Inserir ou atualizar ──
+          const idx = extintores.findIndex(
+            (e) => e.patrimonio === patrimonio
+          );
+
+          if (idx >= 0) {
+            // Atualiza preservando ID e data de criação
+            extintores[idx] = Object.assign({}, extintores[idx], {
+              tipo, classe, capacidade, localizacao,
+              fabricacao, ultimaInspecao, hidrostatico, recarga,
+              empresaMnt, selo,
+              obs: obsInp || extintores[idx].obs || "",
+            });
+            atualizados++;
+          } else {
+            extintores.push({
+              id: "e" + Date.now() + "_" + i,
+              patrimonio, tipo, classe, capacidade, localizacao,
+              fabricacao, ultimaInspecao, hidrostatico, recarga,
+              empresaMnt, selo, obs: obsInp,
+              criadoEm: today(),
+            });
+            criados++;
+          }
+        }
+
+        lsSet("extintores", extintores);
+        showImportResult(criados, atualizados, erros);
+        // Recarrega página de extintores se estiver ativa
+        const navExt = document.getElementById("nav-extintores");
+        if (navExt && navExt.classList.contains("active")) showPage("extintores");
+      }
+
+      function showImportResult(criados, atualizados, erros) {
+        const total = criados + atualizados;
+        let html = "";
+
+        if (total > 0) {
+          html += `<div class="alert-item alert-green" style="margin-bottom:10px;">
+            ✅ Importação concluída: <strong>${criados} novo(s)</strong> registrado(s) e
+            <strong>${atualizados} atualizado(s)</strong>.
+          </div>`;
+        }
+
+        if (erros.length) {
+          html += `<div class="alert-item alert-red" style="margin-bottom:10px;">
+            ❌ <strong>${erros.length} linha(s) ignorada(s)</strong> por erros de validação.
+          </div>`;
+          html += `<div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:#fafbfd;">`;
+          erros.forEach((e) => {
+            html += `<p style="font-size:12px;color:var(--red);padding:3px 0;border-bottom:1px solid #f0e0e0;">${e}</p>`;
+          });
+          html += `</div>`;
+        }
+
+        if (total === 0 && !erros.length) {
+          html = `<div class="alert-item alert-yellow">⚠️ Nenhum registro processado. Verifique o formato do arquivo.</div>`;
+        }
+
+        html += `<div style="margin-top:16px;text-align:right;">
+          <button class="btn btn-navy" onclick="closeModal('modalImportResult')">Fechar</button>
+        </div>`;
+
+        document.getElementById("importResultBody").innerHTML = html;
+        document.getElementById("importResultTitle").textContent =
+          erros.length && total === 0
+            ? "Importação com Erros"
+            : erros.length
+              ? "Importação Concluída com Avisos"
+              : "Importação Concluída";
+        openModal("modalImportResult");
+      }
+
+      /* ──────────────────────────────────────────────
+   ENVIAR E-MAIL
+────────────────────────────────────────────── */
+      function enviarEmail() {
+        const ext = ls("extintores") || [];
+        const avcb = ls("avcb");
+        const checks = ls("checklists") || [];
+        const mes = today().slice(0, 7);
+        const irregulares = ext.filter((e) => extStatus(e) === "red");
+        const atencao = ext.filter((e) => extStatus(e) === "yellow");
+        const pendentes = ext.filter(
+          (e) =>
+            !checks.some((c) => c.extId === e.id && c.data.slice(0, 7) === mes),
+        );
+
+        let corpo = `Relatório de Extintores – Laticínios Centro Oeste Indústria\n`;
+        corpo += `Data: ${new Date().toLocaleDateString("pt-BR")}\n`;
+        corpo += `Usuário: ${currentUser?.nome || "–"}\n\n`;
+        corpo += `=== RESUMO GERAL ===\n`;
+        corpo += `Total de extintores: ${ext.length}\n`;
+        corpo += `Irregulares: ${irregulares.length}\n`;
+        corpo += `Em atenção: ${atencao.length}\n\n`;
+
+        if (irregulares.length) {
+          corpo += `=== IRREGULARIDADES ===\n`;
+          irregulares.forEach((e) => {
+            corpo += `- ${e.patrimonio} | ${e.localizacao} | Recarga: ${fmtDate(e.recarga)}\n`;
+          });
+          corpo += "\n";
+        }
+
+        if (pendentes.length) {
+          corpo += `=== CHECKLIST PENDENTE (${mes}) ===\n`;
+          pendentes.forEach((e) => {
+            corpo += `- ${e.patrimonio} | ${e.localizacao}\n`;
+          });
+          corpo += "\n";
+        }
+
+        corpo += `=== AVCB ===\n`;
+        if (avcb) {
+          const d = daysTo(avcb.validade);
+          corpo += `Nº: ${avcb.numero} | Validade: ${fmtDate(avcb.validade)} | ${d < 0 ? "VENCIDO" : d <= 30 ? `Vence em ${d} dias` : "Válido"}\n`;
+        } else {
+          corpo += "AVCB não cadastrado.\n";
+        }
+
+        const assunto = encodeURIComponent(
+          "Relatório de Extintores – Laticínios Centro Oeste Indústria",
+        );
+        const body = encodeURIComponent(corpo);
+        window.location.href = `mailto:?subject=${assunto}&body=${body}`;
+      }
+
+      /* ──────────────────────────────────────────────
+   USUÁRIOS
+────────────────────────────────────────────── */
+      function renderUsuarios() {
+        const isAdmin = currentUser && currentUser.perfil === "Administrador";
+        if (!isAdmin)
+          return `<div class="page-title">👥 Usuários</div><div class="card"><p style="color:var(--muted);">Acesso restrito ao Administrador.</p></div>`;
+        const usuarios = ls("usuarios") || [];
+        const rows = usuarios.map((u) => {
+          const tempBadge = u.senha_temporaria
+            ? `<span class="badge badge-orange" title="Usuário deverá trocar a senha no próximo login">🔐 Senha Temp.</span>`
+            : "";
+          const criadoEm = u.data_criacao ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;">Criado em ${fmtDate(u.data_criacao)} por ${u.criado_por||"–"}</div>` : "";
+          return `
+    <tr>
+      <td><strong>${u.nome}</strong>${criadoEm}</td>
+      <td>${u.login}</td>
+      <td>
+        <span class="badge ${u.perfil === "Administrador" ? "badge-green" : "badge-gray"}">${u.perfil}</span>
+        ${tempBadge}
+      </td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-xs btn-yellow" onclick="editarUsuario('${u.id}')">✏️ Editar</button>
+          <button class="btn btn-xs btn-outline" onclick="resetarSenhaUsuario('${u.id}')" title="Redefinir senha temporária">🔑 Reset</button>
+          ${u.id !== "u1" && u.id !== "u2" ? `<button class="btn btn-xs btn-red" onclick="excluirUsuario('${u.id}')">🗑️</button>` : ""}
+        </div>
+      </td>
+    </tr>`;
+        }).join("");
+        return `
+  <div class="page-title">👥 Gerenciamento de Usuários</div>
+  <div class="card" style="padding:12px 16px;margin-bottom:12px;background:#fff8e1;border-left:4px solid #f9a825;">
+    <p style="font-size:12px;color:#5d3e00;">
+      🔐 Ao criar um usuário, o sistema define a senha como <strong>temporária</strong>.
+      O usuário deverá cadastrar uma nova senha no primeiro login.<br/>
+      Use o botão <strong>🔑 Reset</strong> para forçar a troca de senha de um usuário existente.
+    </p>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-navy" onclick="abrirModalUsuario()">➕ Novo Usuário</button>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Login</th><th>Perfil / Status</th><th>Ações</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+      }
+
+      function abrirModalUsuario() {
+        editingUserId = null;
+        document.getElementById("modalUsuarioTitle").textContent = "Cadastrar Usuário";
+        ["fNomeUser", "fLoginUser", "fSenhaUser"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+        document.getElementById("fPerfilUser").value = "Operador";
+        // Restaura label e hint para modo criação
+        document.getElementById("fSenhaUserLabel").textContent = "Senha Temporária *";
+        document.getElementById("fSenhaUserHint").style.display = "block";
+        document.getElementById("fSenhaUser").placeholder = "Será exigida troca no 1º acesso";
+        document.getElementById("fSenhaUser").required = true;
+        openModal("modalUsuario");
+      }
+
+      function editarUsuario(id) {
+        const u = (ls("usuarios") || []).find((x) => x.id === id);
+        if (!u) return;
+        editingUserId = id;
+        document.getElementById("modalUsuarioTitle").textContent = "Editar Usuário";
+        document.getElementById("fNomeUser").value  = u.nome;
+        document.getElementById("fLoginUser").value = u.login;
+        // Por segurança, NÃO pré-preenche a senha
+        document.getElementById("fSenhaUser").value = "";
+        document.getElementById("fPerfilUser").value = u.perfil;
+        // Ajusta label e hint para modo edição
+        document.getElementById("fSenhaUserLabel").textContent = "Nova Senha (deixe vazio para manter)";
+        document.getElementById("fSenhaUserHint").style.display = "none";
+        document.getElementById("fSenhaUser").placeholder = "Deixe em branco para não alterar";
+        document.getElementById("fSenhaUser").required = false;
+        openModal("modalUsuario");
+      }
+
+      function salvarUsuario() {
+        const nome   = document.getElementById("fNomeUser").value.trim();
+        const login  = document.getElementById("fLoginUser").value.trim();
+        const senha  = document.getElementById("fSenhaUser").value.trim();
+        const perfil = document.getElementById("fPerfilUser").value;
+
+        if (!nome || !login) {
+          alert("Preencha nome e login.");
+          return;
+        }
+        // Senha obrigatória apenas na criação
+        if (!editingUserId && !senha) {
+          alert("Informe a senha temporária para o novo usuário.");
+          return;
+        }
+
+        const usuarios = ls("usuarios") || [];
+        const dup = usuarios.find((u) => u.login === login && u.id !== editingUserId);
+        if (dup) {
+          alert("Já existe um usuário com este login.");
+          return;
+        }
+
+        if (editingUserId) {
+          // ── EDIÇÃO ──
+          const idx = usuarios.findIndex((u) => u.id === editingUserId);
+          const atual = usuarios[idx];
+          const obj = Object.assign({}, atual, { nome, login, perfil });
+
+          if (senha) {
+            // Admin forneceu nova senha → trata como reset temporário
+            const erros = _validarSenha(senha);
+            if (erros.length) { alert("Senha inválida:\n" + erros.join("\n")); return; }
+            obj.senha = senha;
+            obj.senha_temporaria = true;
+          }
+          // Se senha em branco, mantém a senha e o estado de senha_temporaria atuais
+
+          usuarios[idx] = obj;
+          // Atualiza info de header se o usuário editado for o logado
+          if (currentUser && currentUser.id === editingUserId) {
+            currentUser = obj;
+            lsSet("sessao", obj.id);
+            document.getElementById("userInfo").textContent =
+              `Usuário logado: ${obj.nome} | Perfil: ${obj.perfil}`;
+          }
+        } else {
+          // ── CRIAÇÃO ──
+          const erros = _validarSenha(senha);
+          if (erros.length) { alert("Senha inválida:\n" + erros.join("\n")); return; }
+          usuarios.push({
+            id: "u" + Date.now(),
+            nome, login, senha, perfil,
+            senha_temporaria: true,          // sempre temporária na criação
+            data_criacao: today(),
+            criado_por: currentUser ? currentUser.nome : "–",
+          });
+        }
+
+        lsSet("usuarios", usuarios);
+        closeModal("modalUsuario");
+        showPage("usuarios");
+      }
+
+      function excluirUsuario(id) {
+        if (id === "u1" || id === "u2") {
+          alert("Usuários padrão não podem ser excluídos.");
+          return;
+        }
+        if (!confirm("Confirma exclusão do usuário?")) return;
+        let usuarios = (ls("usuarios") || []).filter((u) => u.id !== id);
+        lsSet("usuarios", usuarios);
+        showPage("usuarios");
+      }
+
+      /* ──────────────────────────────────────────────
+   BAIXA CONTROLADA DE EXTINTORES
+────────────────────────────────────────────── */
+
+      /** Abre o modal de baixa para o extintor indicado */
+      function abrirModalBaixa(id) {
+        if (!currentUser) return;
+
+        const ext = (ls("extintores") || []).find((e) => e.id === id);
+        if (!ext) return;
+
+        baixandoExtId = id;
+        // Preenche painel informativo
+        document.getElementById("modalBaixaInfo").innerHTML =
+          `<strong>Patrimônio:</strong> ${ext.patrimonio} &nbsp;|&nbsp;
+           <strong>Tipo:</strong> ${ext.tipo} &nbsp;|&nbsp;
+           <strong>Local:</strong> ${ext.localizacao}`;
+        // Reseta o formulário
+        document.getElementById("fMotivoBaixa").value = "";
+        document.getElementById("fDescBaixa").value = "";
+        document.getElementById("fDescBaixaGroup").style.display = "none";
+        openModal("modalBaixa");
+      }
+
+      /** Mostra/oculta campo de descrição quando motivo = "Outro" */
+      function toggleMotivoBaixaOutro() {
+        const motivo = document.getElementById("fMotivoBaixa").value;
+        document.getElementById("fDescBaixaGroup").style.display =
+          motivo === "Outro" ? "block" : "none";
+      }
+
+      /** Confirma e persiste a baixa do extintor (sem deletar) */
+      function confirmarBaixa() {
+        if (!currentUser) return;
+
+        const motivo = document.getElementById("fMotivoBaixa").value.trim();
+        const desc   = document.getElementById("fDescBaixa").value.trim();
+
+        // Validação: motivo obrigatório
+        if (!motivo) {
+          _registrarLog("baixa_sem_motivo", currentUser.id, currentUser.nome);
+          alert("Selecione o motivo da baixa antes de confirmar.");
+          return;
+        }
+        // Validação: descrição obrigatória quando motivo = Outro
+        if (motivo === "Outro" && !desc) {
+          alert("Informe a descrição detalhada para o motivo 'Outro'.");
+          return;
+        }
+
+        const extintores = ls("extintores") || [];
+        const idx = extintores.findIndex((e) => e.id === baixandoExtId);
+        if (idx < 0) { closeModal("modalBaixa"); return; }
+
+        // Persiste baixa (não exclui)
+        extintores[idx] = Object.assign({}, extintores[idx], {
+          status:              "BAIXADO",
+          motivo_baixa:        motivo,
+          descricao_baixa:     motivo === "Outro" ? desc : "",
+          data_hora_baixa:     new Date().toISOString(),
+          data_baixa:          today(),
+          usuario_baixa:       currentUser.nome,
+          perfil_usuario_baixa: currentUser.perfil,
+        });
+        lsSet("extintores", extintores);
+
+        // Registra log de auditoria
+        _registrarLog(
+          "baixa_extintor",
+          currentUser.id,
+          currentUser.nome,
+          currentUser.nome,
+          { patrimonio: extintores[idx].patrimonio, motivo }
+        );
+
+        baixandoExtId = null;
+        closeModal("modalBaixa");
+        showPage("extintores");
+      }
+
+      /* ──────────────────────────────────────────────
+   REATIVAÇÃO DE EXTINTORES
+────────────────────────────────────────────── */
+
+      /** Abre o modal de reativação (somente administrador) */
+      function abrirModalReativar(id) {
+        if (!isAdmin()) {
+          _registrarLog("reativacao_negada", currentUser.id, currentUser.nome);
+          alert("Somente o Administrador pode reativar extintores.");
+          return;
+        }
+        const ext = (ls("extintores") || []).find((e) => e.id === id);
+        if (!ext) return;
+
+        reativandoExtId = id;
+        document.getElementById("modalReativarInfo").innerHTML =
+          `<strong>Patrimônio:</strong> ${ext.patrimonio} &nbsp;|&nbsp;
+           <strong>Tipo:</strong> ${ext.tipo} &nbsp;|&nbsp;
+           <strong>Local:</strong> ${ext.localizacao}<br/>
+           <span style="color:var(--red2);font-size:12px;">
+             Baixado em ${fmtDate(ext.data_baixa)} por ${ext.usuario_baixa} —
+             Motivo: ${ext.motivo_baixa}${ext.descricao_baixa ? " (" + ext.descricao_baixa + ")" : ""}
+           </span>`;
+        document.getElementById("fJustReativar").value = "";
+        openModal("modalReativar");
+      }
+
+      /** Confirma e persiste a reativação */
+      function confirmarReativacao() {
+        if (!isAdmin()) {
+          _registrarLog("reativacao_negada", currentUser.id, currentUser.nome);
+          closeModal("modalReativar");
+          return;
+        }
+        const just = document.getElementById("fJustReativar").value.trim();
+        if (!just) {
+          alert("Informe a justificativa da reativação.");
+          return;
+        }
+
+        const extintores = ls("extintores") || [];
+        const idx = extintores.findIndex((e) => e.id === reativandoExtId);
+        if (idx < 0) { closeModal("modalReativar"); return; }
+
+        extintores[idx] = Object.assign({}, extintores[idx], {
+          status:                    "ATIVO",
+          data_hora_reativacao:      new Date().toISOString(),
+          data_reativacao:           today(),
+          usuario_reativacao:        currentUser.nome,
+          perfil_usuario_reativacao: currentUser.perfil,
+          justificativa_reat:        just,
+          // Preserva histórico de baixa intacto
+        });
+        lsSet("extintores", extintores);
+
+        _registrarLog(
+          "reativacao_extintor",
+          currentUser.id,
+          currentUser.nome,
+          currentUser.nome,
+          { patrimonio: extintores[idx].patrimonio }
+        );
+
+        reativandoExtId = null;
+        closeModal("modalReativar");
+        showPage("baixados");
+      }
+
+      /* ──────────────────────────────────────────────
+   PÁGINA EXTINTORES BAIXADOS
+────────────────────────────────────────────── */
+
+      function renderBaixados() {
+        const todos     = ls("extintores") || [];
+        const baixados  = todos.filter((e) => e.status === "BAIXADO");
+        const checks    = ls("checklists") || [];
+
+        return `
+  <div class="page-title">📦 Extintores Baixados</div>
+  <div class="btn-group">
+    <button class="btn btn-outline" onclick="imprimirBaixados()">🖨️ Imprimir Relatório</button>
+  </div>
+  <div class="filters">
+    <div class="form-group">
+      <label>Motivo</label>
+      <select id="filtBaixaMotivo" onchange="filtrarBaixados()">
+        <option value="">Todos</option>
+        ${MOTIVOS_BAIXA.map((m) => `<option>${m}</option>`).join("")}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Data da Baixa (de)</label>
+      <input type="date" id="filtBaixaDe" onchange="filtrarBaixados()"/>
+    </div>
+    <div class="form-group">
+      <label>Data da Baixa (até)</label>
+      <input type="date" id="filtBaixaAte" onchange="filtrarBaixados()"/>
+    </div>
+    <div class="form-group">
+      <label>Responsável</label>
+      <input type="text" id="filtBaixaResp" placeholder="Buscar..." oninput="filtrarBaixados()"/>
+    </div>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Patrimônio</th><th>Tipo</th><th>Localização</th>
+            <th>Data da Baixa</th><th>Motivo</th>
+            <th>Responsável</th><th>Última Inspeção</th>
+            <th>Situação</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tblBaixadosBody">${_renderLinhasBaixados(baixados, checks)}</tbody>
+      </table>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:10px;">
+    Total de extintores baixados: <strong>${baixados.length}</strong>
+  </p>`;
+      }
+
+      function _renderLinhasBaixados(lista, checks) {
+        if (!lista.length) {
+          return `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px;">
+            Nenhum extintor baixado encontrado.</td></tr>`;
+        }
+        return lista.map((e) => {
+          const cls = [...(checks || [])]
+            .filter((c) => c.extId === e.id)
+            .sort((a, b) => b.data.localeCompare(a.data))[0];
+          const motStr = e.motivo_baixa + (e.descricao_baixa ? ` (${e.descricao_baixa})` : "");
+          return `<tr class="row-baixado">
+            <td><strong>${e.patrimonio}</strong></td>
+            <td>${e.tipo}</td>
+            <td>${e.localizacao}</td>
+            <td>${fmtDate(e.data_baixa)}</td>
+            <td><span class="badge badge-gray">${motStr}</span></td>
+            <td>${e.usuario_baixa || "–"}<br/><span style="font-size:11px;color:var(--muted);">${e.perfil_usuario_baixa || ""}</span></td>
+            <td>${cls ? fmtDate(cls.data) + " – " + cls.resultado : "–"}</td>
+            <td><span class="badge badge-baixado">📦 BAIXADO</span></td>
+            <td>
+              <button class="btn btn-xs btn-navy" onclick="verFichaExtintor('${e.id}')">📋 Ficha</button>
+              ${isAdmin() ? `<button class="btn btn-xs btn-green" onclick="abrirModalReativar('${e.id}')">♻️ Reativar</button>` : ""}
+            </td>
+          </tr>`;
+        }).join("");
+      }
+
+      function filtrarBaixados() {
+        const motivo = (document.getElementById("filtBaixaMotivo") || {}).value || "";
+        const de     = (document.getElementById("filtBaixaDe")     || {}).value || "";
+        const ate    = (document.getElementById("filtBaixaAte")    || {}).value || "";
+        const resp   = ((document.getElementById("filtBaixaResp")  || {}).value || "").toLowerCase();
+        const todos  = ls("extintores") || [];
+        const checks = ls("checklists") || [];
+        const lista  = todos.filter((e) => {
+          if (e.status !== "BAIXADO") return false;
+          if (motivo && e.motivo_baixa !== motivo) return false;
+          if (de  && e.data_baixa < de)  return false;
+          if (ate && e.data_baixa > ate) return false;
+          if (resp && !(e.usuario_baixa || "").toLowerCase().includes(resp)) return false;
+          return true;
+        });
+        const body = document.getElementById("tblBaixadosBody");
+        if (body) body.innerHTML = _renderLinhasBaixados(lista, checks);
+      }
+
+      function imprimirBaixados() {
+        const todos  = ls("extintores") || [];
+        const checks = ls("checklists") || [];
+        const lista  = todos.filter((e) => e.status === "BAIXADO");
+        const agora  = new Date().toLocaleString("pt-BR");
+        const rows   = lista.map((e) => {
+          const cls = [...(checks || [])]
+            .filter((c) => c.extId === e.id)
+            .sort((a, b) => b.data.localeCompare(a.data))[0];
+          const motStr = e.motivo_baixa + (e.descricao_baixa ? ` (${e.descricao_baixa})` : "");
+          return `<tr>
+            <td>${e.patrimonio}</td><td>${e.tipo}</td><td>${e.localizacao}</td>
+            <td>${fmtDate(e.data_baixa)}</td><td>${motStr}</td>
+            <td>${e.usuario_baixa || "–"}</td>
+            <td>${cls ? fmtDate(cls.data) + " – " + cls.resultado : "–"}</td>
+            <td>BAIXADO</td>
+          </tr>`;
+        }).join("");
+        const win = window.open("", "_blank");
+        win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+          <meta charset="UTF-8"/><title>Relatório de Extintores Baixados</title>
+          <style>
+            body{font-family:Arial,sans-serif;font-size:11px;padding:20px;}
+            h1{font-size:15px;} h2{font-size:12px;color:#555;margin-bottom:4px;}
+            table{width:100%;border-collapse:collapse;margin-top:12px;}
+            th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;}
+            th{background:#1a3a5c;color:#fff;}
+            tr:nth-child(even){background:#f5f5f5;}
+            @media print{button{display:none!important;}}
+          </style></head><body>
+          <h1>Laticínios Centro Oeste Indústria</h1>
+          <h2>Relatório Oficial de Extintores Baixados – NR-23</h2>
+          <p>Data/Hora: ${agora} | Usuário: ${currentUser?.nome || "–"}</p>
+          <table>
+            <thead><tr>
+              <th>Patrimônio</th><th>Tipo</th><th>Localização</th>
+              <th>Data Baixa</th><th>Motivo</th><th>Responsável</th>
+              <th>Última Inspeção</th><th>Situação</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p style="margin-top:14px;font-size:10px;color:#777;">
+            Total: ${lista.length} extintor(es) baixado(s).
+            Documento gerado em ${agora}.
+          </p>
+          <br/><button onclick="window.print()">Imprimir</button>
+        </body></html>`);
+        win.document.close();
+      }
+
+      /* ──────────────────────────────────────────────
+   LOGS DE SEGURANÇA
+────────────────────────────────────────────── */
+      function renderLogs() {
+        if (!isAdmin()) {
+          return `<div class="page-title">🛡️ Logs de Segurança</div>
+            <div class="card"><p style="color:var(--muted);">Acesso restrito ao Administrador.</p></div>`;
+        }
+
+        const logs = [...(ls("logs_seguranca") || [])]
+          .sort((a, b) => b.dataHora.localeCompare(a.dataHora));
+
+        const filtraTipo = (t) => logs.filter((l) => !t || l.tipo === t);
+
+        const renderTabela = (lista) => {
+          if (!lista.length) {
+            return '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Nenhum registro encontrado.</td></tr>';
+          }
+          return lista.map((l) => {
+            const dt = new Date(l.dataHora);
+            const dataHoraFmt = dt.toLocaleDateString("pt-BR") + " " +
+              dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const badgeCls = {
+              primeiro_login:    "badge-yellow",
+              troca_obrigatoria: "badge-green",
+              reset_admin:       "badge-orange",
+              expiracao:         "badge-red",
+            }[l.tipo] || "badge-gray";
+            const resp = l.responsavel !== l.usuarioNome
+              ? `<br/><span style="font-size:10px;color:var(--muted);">por: ${l.responsavel}</span>`
+              : "";
+            return `<tr>
+              <td>${dataHoraFmt}</td>
+              <td><strong>${l.usuarioNome}</strong></td>
+              <td><span class="badge ${badgeCls}">${_descLog(l.tipo)}</span>${resp}</td>
+              <td>${l.responsavel}</td>
+            </tr>`;
+          }).join("");
+        };
+
+        // KPIs por tipo
+        const totais = {
+          primeiro_login:    logs.filter((l) => l.tipo === "primeiro_login").length,
+          troca_obrigatoria: logs.filter((l) => l.tipo === "troca_obrigatoria").length,
+          reset_admin:       logs.filter((l) => l.tipo === "reset_admin").length,
+          expiracao:         logs.filter((l) => l.tipo === "expiracao").length,
+        };
+
+        return `
+  <div class="page-title">🛡️ Logs de Segurança</div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));">
+    <div class="kpi"><div class="kpi-value">${logs.length}</div><div class="kpi-label">Total de eventos</div></div>
+    <div class="kpi kpi-yellow"><div class="kpi-value">${totais.primeiro_login}</div><div class="kpi-label">Primeiros Logins</div></div>
+    <div class="kpi kpi-green"><div class="kpi-value">${totais.troca_obrigatoria}</div><div class="kpi-label">Trocas Realizadas</div></div>
+    <div class="kpi kpi-red"><div class="kpi-value">${totais.expiracao}</div><div class="kpi-label">Senhas Expiradas</div></div>
+    <div class="kpi" style="border-top-color:#e67e22;"><div class="kpi-value" style="color:#a04000;">${totais.reset_admin}</div><div class="kpi-label">Resets pelo Admin</div></div>
+  </div>
+  <div class="filters" style="margin-bottom:12px;">
+    <div class="form-group">
+      <label>Filtrar por tipo</label>
+      <select id="filtLogTipo" onchange="filtrarLogs()">
+        <option value="">Todos os eventos</option>
+        <option value="primeiro_login">🔐 Primeiro login</option>
+        <option value="troca_obrigatoria">🔄 Troca obrigatória</option>
+        <option value="reset_admin">🔑 Reset pelo Admin</option>
+        <option value="expiracao">⏰ Senha expirada</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" id="filtLogUser" placeholder="Buscar..." oninput="filtrarLogs()"/>
+    </div>
+    <button class="btn btn-outline btn-filter" onclick="limparLogs()" style="align-self:flex-end;">🗑️ Limpar Logs</button>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table id="tblLogs">
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Usuário</th>
+            <th>Evento</th>
+            <th>Responsável</th>
+          </tr>
+        </thead>
+        <tbody id="tblLogsBody">${renderTabela(logs)}</tbody>
+      </table>
+    </div>
+  </div>`;
+      }
+
+      function filtrarLogs() {
+        const tipo  = (document.getElementById("filtLogTipo") || {}).value || "";
+        const user  = ((document.getElementById("filtLogUser") || {}).value || "").toLowerCase();
+        const logs  = [...(ls("logs_seguranca") || [])]
+          .sort((a, b) => b.dataHora.localeCompare(a.dataHora))
+          .filter((l) => {
+            if (tipo && l.tipo !== tipo) return false;
+            if (user && !l.usuarioNome.toLowerCase().includes(user)) return false;
+            return true;
+          });
+        const body = document.getElementById("tblLogsBody");
+        if (!body) return;
+        if (!logs.length) {
+          body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Nenhum registro encontrado.</td></tr>';
+          return;
+        }
+        body.innerHTML = logs.map((l) => {
+          const dt = new Date(l.dataHora);
+          const dataHoraFmt = dt.toLocaleDateString("pt-BR") + " " +
+            dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          const badgeCls = {
+            primeiro_login:    "badge-yellow",
+            troca_obrigatoria: "badge-green",
+            reset_admin:       "badge-orange",
+            expiracao:         "badge-red",
+          }[l.tipo] || "badge-gray";
+          const resp = l.responsavel !== l.usuarioNome
+            ? `<br/><span style="font-size:10px;color:var(--muted);">por: ${l.responsavel}</span>`
+            : "";
+          return `<tr>
+            <td>${dataHoraFmt}</td>
+            <td><strong>${l.usuarioNome}</strong></td>
+            <td><span class="badge ${badgeCls}">${_descLog(l.tipo)}</span>${resp}</td>
+            <td>${l.responsavel}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      function limparLogs() {
+        if (!isAdmin()) return;
+        if (!confirm("Confirma a limpeza de TODOS os logs de segurança? Esta ação não pode ser desfeita.")) return;
+        lsSet("logs_seguranca", []);
+        showPage("logs");
+      }
+
+      /* ──────────────────────────────────────────────
+   INSTRUÇÕES DE USO DO SISTEMA
+────────────────────────────────────────────── */
+      function renderInstrucoes() {
+        return `
+  <div class="page-title">📖 Instruções de Uso do Sistema</div>
+  <div class="card" style="max-width:860px;">
+    <div style="background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;font-size:13px;line-height:1.7;">
+      <strong style="font-size:15px;">🧯 Sistema de Gestão de Extintores – NR-23</strong><br/>
+      Laticínios Centro Oeste Indústria · Versão vigente · Atualizado em 2025<br/>
+      <span style="opacity:0.8;">Este documento é um guia interno de uso. Não edite os dados fora do sistema.</span>
+    </div>
+
+    <!-- 1. Objetivo -->
+    <div class="instrucoes-section">
+      <h3>1. Objetivo do Sistema</h3>
+      <p>Este sistema tem como finalidade garantir o controle seguro e rastreável dos extintores de incêndio da empresa, em conformidade com as normas vigentes:</p>
+      <ul>
+        <li><strong>NR-23</strong> — Proteção Contra Incêndios: exige inspeção mensal, recarga anual e teste hidrostático periódico dos extintores.</li>
+        <li><strong>AVCB</strong> — Auto de Vistoria do Corpo de Bombeiros: controle de validade do alvará de funcionamento de combate a incêndio.</li>
+        <li><strong>Auditoria interna e externa</strong>: todo cadastro, edição, inspeção, baixa e reativação é registrado com data, hora e usuário responsável.</li>
+      </ul>
+      <div class="instrucoes-info">
+        ℹ️ O sistema funciona 100% offline (sem internet). Todos os dados ficam armazenados localmente no navegador (localStorage). Faça backups regulares via exportação de CSV.
+      </div>
+    </div>
+
+    <!-- 2. Perfis -->
+    <div class="instrucoes-section">
+      <h3>2. Perfis de Usuário e Permissões</h3>
+      <div class="perfil-card">
+        <h4>👑 Administrador</h4>
+        <ul>
+          <li>Acesso total ao sistema</li>
+          <li>Cadastrar, editar e baixar extintores</li>
+          <li>Reativar extintores baixados</li>
+          <li>Gerenciar usuários (criar, editar, redefinir senha)</li>
+          <li>Visualizar logs de segurança</li>
+          <li>Visualizar estas instruções</li>
+        </ul>
+      </div>
+      <div class="perfil-card">
+        <h4>🔵 Supervisor de Segurança do Trabalho</h4>
+        <ul>
+          <li>Cadastrar, editar e baixar extintores</li>
+          <li>Realizar inspeções (checklist mensal NR-23)</li>
+          <li>Importar e exportar CSV</li>
+          <li>Visualizar relatórios e histórico</li>
+          <li>Visualizar estas instruções</li>
+          <li><em>Não pode</em>: reativar extintores, gerenciar usuários, ver logs de segurança</li>
+        </ul>
+      </div>
+      <div class="perfil-card">
+        <h4>🟢 Operador</h4>
+        <ul>
+          <li>Realizar inspeções (checklist mensal NR-23)</li>
+          <li>Importar e exportar CSV</li>
+          <li>Visualizar relatórios e histórico</li>
+          <li><em>Não pode</em>: cadastrar/editar/baixar extintores, gerenciar usuários, ver logs</li>
+        </ul>
+      </div>
+      <div class="instrucoes-warn">
+        ⚠️ Senhas expiram em 90 dias. O sistema bloqueia o acesso e exige troca ao expirar. Nunca compartilhe sua senha.
+      </div>
+    </div>
+
+    <!-- 3. Fluxo de uso -->
+    <div class="instrucoes-section">
+      <h3>3. Fluxo Correto de Uso</h3>
+      <div class="fluxo-step">
+        <div class="fluxo-num">1</div>
+        <div class="fluxo-text">
+          <strong>Cadastro do Extintor</strong>
+          <span>Acesse <em>Extintores → Novo Extintor</em>. Preencha todos os campos obrigatórios (*). O sistema registra automaticamente o usuário, perfil e data/hora do cadastro.</span>
+        </div>
+      </div>
+      <div class="fluxo-step">
+        <div class="fluxo-num">2</div>
+        <div class="fluxo-text">
+          <strong>Inclusão de Foto</strong>
+          <span>No cadastro ou edição, clique em <em>"Selecionar / Tirar Foto"</em>. Em celular, abre câmera ou galeria. Em desktop, selecione um arquivo JPG/PNG. A imagem é redimensionada automaticamente para economizar espaço.</span>
+        </div>
+      </div>
+      <div class="fluxo-step">
+        <div class="fluxo-num">3</div>
+        <div class="fluxo-text">
+          <strong>Checklist Mensal NR-23</strong>
+          <span>Acesse <em>Checklist NR-23</em> e clique em <em>"Realizar"</em> para cada extintor ativo. Responda todos os 9 itens. O sistema calcula automaticamente o resultado: Conforme / Com Ressalvas / Não Conforme. Extintores baixados não aparecem no checklist.</span>
+        </div>
+      </div>
+      <div class="fluxo-step">
+        <div class="fluxo-num">4</div>
+        <div class="fluxo-text">
+          <strong>Baixa Controlada</strong>
+          <span>Para retirar um extintor de operação, clique em <em>"⬇️ Baixar"</em> e selecione o motivo padronizado. O extintor não é excluído — fica registrado como BAIXADO, com foto e histórico preservados.</span>
+        </div>
+      </div>
+      <div class="fluxo-step">
+        <div class="fluxo-num">5</div>
+        <div class="fluxo-text">
+          <strong>Reativação (Administrador)</strong>
+          <span>Em <em>Extintores Baixados</em>, clique em <em>"♻️ Reativar"</em> e informe a justificativa técnica. Somente o Administrador pode reativar.</span>
+        </div>
+      </div>
+      <div class="fluxo-step">
+        <div class="fluxo-num">6</div>
+        <div class="fluxo-text">
+          <strong>Relatórios e Exportação</strong>
+          <span>Acesse <em>Relatórios Gerais</em> para imprimir a lista de extintores ativos (com informações de cadastro). Use <em>Exportar CSV</em> para salvar backup e importar em outros sistemas ou planilhas.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Regras importantes -->
+    <div class="instrucoes-section">
+      <h3>4. Regras Importantes</h3>
+      <ul>
+        <li>🚫 <strong>Nunca exclua registros</strong>: use sempre a <em>Baixa Controlada</em>. A exclusão física não existe no sistema.</li>
+        <li>📋 <strong>Checklist somente para ativos</strong>: extintores BAIXADOS não podem receber novas inspeções.</li>
+        <li>📷 <strong>Foto em extintores baixados</strong>: a foto é preservada no histórico, mas não pode ser alterada após a baixa.</li>
+        <li>🔐 <strong>Registro automático</strong>: todo cadastro, edição, inspeção, baixa e reativação registra usuário, perfil e data/hora automaticamente, sem preenchimento manual.</li>
+        <li>📅 <strong>Datas de vencimento</strong>: o sistema exibe alertas automáticos quando recarga ou hidrostático estiverem vencidos (❌ Irregular) ou próximos do vencimento em até 30 dias (⚠️ Atenção).</li>
+        <li>💾 <strong>Backup regular</strong>: exporte CSV periodicamente para salvar cópia dos dados.</li>
+      </ul>
+      <div class="instrucoes-warn">
+        ⚠️ Todos os dados ficam no navegador local. Se o histórico do navegador for apagado ou o computador formatado, os dados serão perdidos. <strong>Faça backup CSV regularmente.</strong>
+      </div>
+    </div>
+
+    <!-- 5. Auditoria -->
+    <div class="instrucoes-section">
+      <h3>5. Orientações para Auditoria</h3>
+      <ul>
+        <li>📋 <strong>Histórico de inspeções</strong>: acesse <em>Histórico</em> no menu. Cada inspeção exibe data, responsável, usuário do sistema, perfil e resultado.</li>
+        <li>📦 <strong>Extintores baixados</strong>: acesse <em>Extintores Baixados</em>. Exibe todos os extintores fora de operação com motivo, usuário e data/hora da baixa.</li>
+        <li>📋 <strong>Ficha individual</strong>: clique em <em>"📋 Ficha"</em> em qualquer extintor (ativo ou baixado) para ver o ciclo de vida completo: foto, cadastro, edições, baixa, reativação e inspeções.</li>
+        <li>🛡️ <strong>Logs de segurança</strong> (somente Administrador): acesse <em>Logs de Segurança</em> para ver todos os eventos de senha, foto e extintor registrados no sistema.</li>
+        <li>📁 <strong>Relatório oficial de baixas</strong>: em <em>Extintores Baixados → Imprimir Relatório</em>, gere o relatório formal para arquivamento ou fiscalização.</li>
+      </ul>
+      <div class="instrucoes-info">
+        ℹ️ Para auditorias externas, imprima o <em>Histórico de Inspeções</em> e o <em>Relatório de Extintores Baixados</em>. Ambos contêm os dados de rastreabilidade exigidos pela NR-23.
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
+      Sistema de Gestão de Extintores NR-23 · Laticínios Centro Oeste Indústria · Documento de uso interno · Não editável
+    </p>
+  </div>`;
+      }
+
+      /* ──────────────────────────────────────────────
+   HELPERS DE MODAL
+────────────────────────────────────────────── */
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+      // Fechar clicando fora
+      document.querySelectorAll(".modal-overlay").forEach((m) => {
+        m.addEventListener("click", (e) => {
+          if (e.target === m) m.classList.remove("open");
+        });
+      });
+
+      /* ──────────────────────────────────────────────
+   INICIALIZAÇÃO (Firebase → cache → UI)
+────────────────────────────────────────────── */
+
+      /** Chaves compartilhadas entre dispositivos via Firebase */
+      const SHARED_KEYS = ["usuarios","extintores","checklists","avcb","logs_seguranca"];
+
+      /** Carrega backup do localStorage para o cache (modo offline/fallback) */
+      function _cachearLocalStorage() {
+        SHARED_KEYS.forEach((key) => {
+          try {
+            const v = JSON.parse(localStorage.getItem(key));
+            if (v !== null) _cache[key] = v;
+          } catch (_) { /* ignore */ }
+        });
+      }
+
+      /**
+       * Mescla dados do Firebase no cache local.
+       * Regra: para arrays, usa o que tiver mais itens (mais completo).
+       * Para não-arrays, Firebase vence. Chaves ausentes localmente recebem o valor do Firebase.
+       */
+      function _mesclarFirebase(fbData) {
+        Object.keys(fbData).forEach((key) => {
+          if (fbData[key] === null || fbData[key] === undefined) return;
+          const local = _cache[key];
+          if (Array.isArray(local) && Array.isArray(fbData[key])) {
+            // Mantém o maior array (evita perder cadastros feitos offline)
+            if (fbData[key].length >= local.length) _cache[key] = fbData[key];
+          } else if (local === null || local === undefined) {
+            _cache[key] = fbData[key]; // primeiro acesso neste dispositivo
+          } else {
+            _cache[key] = fbData[key]; // Firebase vence para escalares/objetos
+          }
+          try { localStorage.setItem(key, JSON.stringify(_cache[key])); } catch (_) {}
+        });
+      }
+
+      /** Mostra badge de status Firebase */
+      function _fbBadge(msg, tipo) {
+        const el = document.getElementById("fbStatus");
+        if (!el) return;
+        el.textContent = msg;
+        el.className = "fb-status " + tipo;
+        el.style.display = "block";
+      }
+
+      /** Ponto de entrada principal — assíncrono */
+      async function _inicializarApp() {
+        const loadMsg = document.getElementById("loadingMsg");
+        const loadEl  = document.getElementById("loadingScreen");
+
+        // PASSO 1: carrega localStorage imediatamente como baseline
+        // Isso garante que dados recém-salvos não se percam em um refresh rápido
+        // antes do Firebase confirmar a escrita
+        _cachearLocalStorage();
+
+        if (FIREBASE_ON) {
+          try {
+            if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+            _fbDb = firebase.database();
+
+            if (loadMsg) loadMsg.textContent = "Sincronizando com Firebase…";
+
+            // PASSO 2: busca snapshot do Firebase e mescla com baseline local
+            const snap = await _fbDb.ref("dados").once("value");
+            _mesclarFirebase(snap.val() || {});
+
+            // PASSO 3: se este é o primeiro uso com este projeto Firebase,
+            // faz upload dos dados locais que ainda não existem lá
+            SHARED_KEYS.forEach((key) => {
+              if (_cache[key] !== undefined && _cache[key] !== null) {
+                _fbDb.ref("dados/" + key).once("value").then((s) => {
+                  if (s.val() === null) {
+                    _fbDb.ref("dados/" + key).set(_cache[key]).catch(() => {});
+                  }
+                });
+              }
+            });
+
+            // Listener em tempo real: atualiza cache quando outro dispositivo altera
+            _fbDb.ref("dados").on("value", (snapshot) => {
+              if (!snapshot.exists()) return;
+              _mesclarFirebase(snapshot.val() || {});
+              if (currentUser) buildAlerts();
+            });
+
+            // Monitora conexão
+            _fbDb.ref(".info/connected").on("value", (s) => {
+              _fbBadge(
+                s.val() ? "🟢 Firebase online" : "🟡 Offline – dados locais",
+                s.val() ? "online" : "offline"
+              );
+            });
+
+          } catch (e) {
+            console.warn("[Firebase] Falha:", e.message);
+            if (loadMsg) loadMsg.textContent = "Offline – usando dados locais…";
+            _fbBadge("🟡 Offline – dados locais", "offline");
+          }
+        } else {
+          if (loadMsg) loadMsg.textContent = "Modo local (Firebase não configurado)…";
+        }
+
+        if (loadEl) loadEl.style.display = "none";
+        initData();
+        checkSession();
+      }
+
+      _inicializarApp();
+    </script>
+  </body>
+</html>
